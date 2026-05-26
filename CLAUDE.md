@@ -29,6 +29,10 @@ git add . && git commit
   settings.local.json   # Claude Code local overrides (not stowed to HOME)
 ```
 
+## References
+
+- [hyprexpo docs](https://hyprexpo.lol/docs/) — task view plugin (SUPER+TAB), config in `.config/hypr/plugins.conf`
+
 ## Rules
 
 - **Never edit `~/.config/` paths directly** — edit files in this repo only
