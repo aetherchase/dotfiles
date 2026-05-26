@@ -40,3 +40,15 @@ Hyprland config is split into sourced files — `hyprland.conf` (provided by Oma
 ## Stow behavior
 
 `stow --restow` re-creates all symlinks, safe to re-run. Conflicts (real files at target path) must be removed manually before stowing. Gitignore excludes common generated/cache paths — check `.gitignore` before adding new files.
+
+## Editing rules
+
+**NEVER edit system config files directly** (e.g. `~/.config/hypr/hypridle.conf`).
+
+If a config file is not yet in this repo:
+1. Copy it here first: `cp ~/.config/<app>/file .config/<app>/file`
+2. Remove the original: `rm ~/.config/<app>/file`
+3. Restow: `stow --target=$HOME --restow .`
+4. Then edit the file inside this repo
+
+All edits must happen on files tracked in `dotfiles/`, never on `~/.config/` paths directly.
