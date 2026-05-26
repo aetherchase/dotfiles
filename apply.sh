@@ -3,6 +3,9 @@ set -euo pipefail
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Cache sudo credentials upfront to avoid repeated prompts
+sudo -v
+
 echo "Symlinking dotfiles from: $DOTFILES_DIR"
 
 stow --dir="$DOTFILES_DIR" --target="$HOME" --adopt --restow .
