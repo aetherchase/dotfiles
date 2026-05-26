@@ -40,6 +40,7 @@ Files in this repo — owned by dotfiles, Omarchy updates ignored:
 | `hypr/hypridle.conf` | custom idle/lock timers |
 | `hypr/input.conf` | machine-specific layouts and mouse profiles |
 | `hypr/looknfeel.conf` | appearance preferences |
+| `hypr/monitors.conf` | custom scale 1.4 (Omarchy default is 1) |
 | `hypr/plugins.conf` | hyprexpo plugin (not in Omarchy) |
 | `alacritty/alacritty.toml` | imports Omarchy base, adds opacity override |
 
@@ -51,7 +52,7 @@ Files Omarchy owns — do NOT add to this repo:
 | `hypr/autostart.conf` | Omarchy-managed |
 | `hypr/hyprlock.conf` | Omarchy-managed |
 | `hypr/hyprsunset.conf` | Omarchy-managed |
-| `hypr/monitors.conf` | Omarchy-managed (no customizations needed) |
+| `hypr/monitors.conf` | Omarchy-managed — but if custom scaling needed, move to owned |
 
 ## References
 
