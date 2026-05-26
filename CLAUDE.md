@@ -6,7 +6,7 @@ Personal Arch Linux + Omarchy + Hyprland dotfiles managed with GNU Stow. Every f
 
 ```bash
 # Restow all symlinks
-stow --target=$HOME --restow .
+./apply.sh
 
 # Add untracked config to repo
 cp ~/.config/<app>/file .config/<app>/file
@@ -19,15 +19,39 @@ git add . && git commit
 
 ```
 .config/
-  alacritty/   # terminal — opacity, font
+  alacritty/alacritty.toml   # imports Omarchy base, overrides opacity
   hypr/
-    bindings.conf   # keybindings, app launchers, language switch
-    input.conf      # keyboard layouts, mouse sensitivity
-    looknfeel.conf  # borders, gaps, cursor, blur, opacity
-    monitors.conf   # display scaling / arrangement
+    bindings.conf    # keybindings, app launchers, language switch
+    hypridle.conf    # idle/lock timers
+    input.conf       # keyboard layouts, mouse (machine-specific)
+    looknfeel.conf   # borders, gaps, cursor, blur, opacity
+    plugins.conf     # hyprexpo task view + keyboard submap
 .claude/
   settings.local.json   # Claude Code local overrides (not stowed to HOME)
 ```
+
+## Ownership boundary
+
+Files in this repo — owned by dotfiles, Omarchy updates ignored:
+
+| File | Why owned |
+|------|-----------|
+| `hypr/bindings.conf` | custom keybindings (hyprexpo, language switch) |
+| `hypr/hypridle.conf` | custom idle/lock timers |
+| `hypr/input.conf` | machine-specific layouts and mouse profiles |
+| `hypr/looknfeel.conf` | appearance preferences |
+| `hypr/plugins.conf` | hyprexpo plugin (not in Omarchy) |
+| `alacritty/alacritty.toml` | imports Omarchy base, adds opacity override |
+
+Files Omarchy owns — do NOT add to this repo:
+
+| File | Notes |
+|------|-------|
+| `hypr/hyprland.conf` | Omarchy-managed; apply.sh patches it to source plugins.conf |
+| `hypr/autostart.conf` | Omarchy-managed |
+| `hypr/hyprlock.conf` | Omarchy-managed |
+| `hypr/hyprsunset.conf` | Omarchy-managed |
+| `hypr/monitors.conf` | Omarchy-managed (no customizations needed) |
 
 ## References
 
@@ -36,5 +60,6 @@ git add . && git commit
 ## Rules
 
 - **Never edit `~/.config/` paths directly** — edit files in this repo only
-- Hyprland config is split: `hyprland.conf` sources each `.conf` in `.config/hypr/` — edit the appropriate split file
+- Hyprland config is split: `hyprland.conf` sources each `.conf` in `.config/hypr/` — add new files for new features
+- `alacritty.toml` imports `~/.local/share/omarchy/config/alacritty/alacritty.toml` — Omarchy alacritty updates flow through automatically
 - Check `.gitignore` before adding new files
