@@ -1,0 +1,3 @@
+# Stow ignore patterns
+# Claude Code settings — managed locally, not symlinked
+\.claude
