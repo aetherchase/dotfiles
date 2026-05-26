@@ -11,6 +11,7 @@ Personal Arch Linux + Omarchy + Hyprland dotfiles managed with GNU Stow. Every f
 # Add untracked config to repo
 cp ~/.config/<app>/file .config/<app>/file
 # edit .config/<app>/file in this repo
+rm ~/.config/<app>/file          # remove real file so stow can create symlink
 ./apply.sh
 git add . && git commit
 ```
@@ -25,6 +26,7 @@ git add . && git commit
     hypridle.conf    # idle/lock timers
     input.conf       # keyboard layouts, mouse (machine-specific)
     looknfeel.conf   # borders, gaps, cursor, blur, opacity
+    monitors.conf    # display scaling (machine-specific)
     plugins.conf     # hyprexpo task view + keyboard submap
 .claude/
   settings.local.json   # Claude Code local overrides (not stowed to HOME)
@@ -40,7 +42,7 @@ Files in this repo — owned by dotfiles, Omarchy updates ignored:
 | `hypr/hypridle.conf` | custom idle/lock timers |
 | `hypr/input.conf` | machine-specific layouts and mouse profiles |
 | `hypr/looknfeel.conf` | appearance preferences |
-| `hypr/monitors.conf` | custom scale 1.4 (Omarchy default is 1) |
+| `hypr/monitors.conf` | machine-specific scaling (1.4 → 1.33 on DP-2 2560x1440) |
 | `hypr/plugins.conf` | hyprexpo plugin (not in Omarchy) |
 | `alacritty/alacritty.toml` | imports Omarchy base, adds opacity override |
 
@@ -52,7 +54,6 @@ Files Omarchy owns — do NOT add to this repo:
 | `hypr/autostart.conf` | Omarchy-managed |
 | `hypr/hyprlock.conf` | Omarchy-managed |
 | `hypr/hyprsunset.conf` | Omarchy-managed |
-| `hypr/monitors.conf` | Omarchy-managed — but if custom scaling needed, move to owned |
 
 ## References
 
