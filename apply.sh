@@ -18,7 +18,11 @@ if ! grep -qF "$PLUGINS_SOURCE" "$HYPR_CONF" 2>/dev/null; then
     echo "Patched $HYPR_CONF to source plugins.conf"
 fi
 
+# Install hyprpm build dependencies
+yay -S --needed --noconfirm cmake gcc git cpio pkgconf
+
 # Install and enable hyprexpo plugin
+hyprpm update
 hyprpm add https://github.com/sandwichfarm/hyprexpo
 hyprpm enable hyprexpo
 hyprpm reload
