@@ -27,4 +27,10 @@ hyprpm add https://github.com/sandwichfarm/hyprexpo
 hyprpm enable hyprexpo
 hyprpm reload
 
+# Reload Hyprland config if running
+if hyprctl version &>/dev/null; then
+    hyprctl reload
+    echo "Hyprland config reloaded."
+fi
+
 echo "Done."
