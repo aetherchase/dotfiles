@@ -11,7 +11,7 @@ stow --target=$HOME --restow .
 # Add untracked config to repo
 cp ~/.config/<app>/file .config/<app>/file
 # edit .config/<app>/file in this repo
-stow --target=$HOME --adopt --restow .
+./apply.sh
 git add . && git commit
 ```
 

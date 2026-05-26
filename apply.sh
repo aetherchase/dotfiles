@@ -5,7 +5,7 @@ DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "Symlinking dotfiles from: $DOTFILES_DIR"
 
-stow --dir="$DOTFILES_DIR" --target="$HOME" --restow .
+stow --dir="$DOTFILES_DIR" --target="$HOME" --adopt --restow .
 
 # Ensure hyprland.conf sources plugins.conf (file is not in dotfiles, so we patch it)
 HYPR_CONF="$HOME/.config/hypr/hyprland.conf"
