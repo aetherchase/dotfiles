@@ -72,12 +72,13 @@
       "class<discord>": "󰙯",
       "class<vesktop>": "󰙯",
       "class<slack>": "󰒱",
-      "class<org.telegram.desktop>": "󰔁",
-      "class<telegram-desktop>": "󰔁",
+      "class<org\\.telegram\\.desktop>": "󰔁",
+      "class<telegram.*>": "󰔁",
       "class<signal>": "󰭻",
       "class<com.microsoft.Teams>": "󰊻",
       "class<teams-for-linux>": "󰊻",
       "class<zoom>": "󰕧",
+      "class<cliq>": "󱅰",
       "class<Element>": "󰮊",
       "class<nheko>": "󰮊",
       // Media
@@ -156,7 +157,8 @@
   "custom/layout": {
     "exec": "~/.config/waybar/layout-toggle.sh",
     "return-type": "json",
-    "interval": 0.5,
+    "interval": 1,
+    "signal": 11,
     "on-click": "~/.config/waybar/layout-toggle.sh --toggle",
     "tooltip": true
   },

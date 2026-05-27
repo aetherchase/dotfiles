@@ -50,7 +50,9 @@ window#waybar {
 
 tooltip {
   background-color: @background;
+  color: @foreground;
   border-radius: 8px;
+  padding: 2px;
 }
 
 #workspaces button {
@@ -114,9 +116,6 @@ tooltip {
   margin-right: 18px;
 }
 
-tooltip {
-  padding: 2px;
-}
 
 #custom-update {
   font-size: 10px;

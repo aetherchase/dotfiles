@@ -23,6 +23,7 @@ else:
     for w in ws_windows:
         subprocess.run(['hyprctl', 'dispatch', 'setfloating', f"address:{w['address']}"])
 EOF
+  sleep 0.15 && pkill -RTMIN+11 waybar
 else
   python3 << EOF
 import json, subprocess
