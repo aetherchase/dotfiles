@@ -14,13 +14,38 @@ window#waybar {
 }
 
 .modules-left,
-.modules-center,
 .modules-right {
   background-color: alpha(@background, 0.6);
   border-radius: 12px;
   margin: 4px 4px;
   padding: 0 20px;
   color: mix(@foreground, white, 0.25);
+}
+
+.modules-center {
+  background: transparent;
+  margin: 0;
+  padding: 0;
+  color: mix(@foreground, white, 0.25);
+}
+
+#workspaces-pill {
+  background-color: alpha(@background, 0.6);
+  border-radius: 12px;
+  margin: 4px 4px;
+  padding: 0 20px;
+}
+
+#custom-layout {
+  background-color: alpha(@background, 0.6);
+  border-radius: 12px;
+  margin: 4px 4px;
+  padding: 0 16px;
+  opacity: 0.6;
+}
+
+#custom-layout.float {
+  opacity: 1;
 }
 
 tooltip {
@@ -143,3 +168,4 @@ tooltip {
 #custom-voxtype.recording {
   color: #a55555;
 }
+
