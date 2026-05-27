@@ -16,10 +16,11 @@ window#waybar {
 .modules-left,
 .modules-center,
 .modules-right {
-  background-color: alpha(@background, 0.75);
+  background-color: alpha(@background, 0.6);
   border-radius: 12px;
   margin: 4px 4px;
   padding: 0 20px;
+  color: mix(@foreground, white, 0.25);
 }
 
 tooltip {
