@@ -5,13 +5,13 @@
   "margin": "4 4 0 4",
   "spacing": 0,
   "height": 38,
-  "modules-left": ["custom/omarchy", "hyprland/workspaces"],
-  "modules-center": ["clock", "custom/weather", "custom/update", "custom/voxtype", "custom/screenrecording-indicator", "custom/idle-indicator", "custom/notification-silencing-indicator"],
+  "modules-left": ["clock", "custom/weather", "custom/update", "custom/voxtype", "custom/screenrecording-indicator", "custom/idle-indicator", "custom/notification-silencing-indicator"],
+  "modules-center": ["custom/omarchy", "hyprland/workspaces"],
   "modules-right": [
-    "group/tray-expander",
+    "tray",
     "bluetooth",
     "network",
-    "pulseaudio",
+    "wireplumber",
     "memory",
     "cpu",
     "battery"
@@ -236,6 +236,15 @@
       "headset": "",
       "default": ["", "", ""]
     }
+  },
+  "wireplumber": {
+    "format": "{icon}",
+    "format-muted": "󰝟",
+    "format-icons": ["󰕿", "󰖀", "󰕾"],
+    "on-click": "omarchy-launch-audio",
+    "on-click-right": "pamixer -t",
+    "scroll-step": 5,
+    "tooltip-format": "{volume}%"
   },
   "group/tray-expander": {
     "orientation": "inherit",
