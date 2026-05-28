@@ -1,0 +1,25 @@
+# Yazi 26.x theme — Gruvbox contrast fix
+
+[tabs]
+active   = { fg = "#1d2021", bg = "#7daea3", bold = true }
+inactive = { fg = "#d4be98", bg = "#3c3836" }
+
+[status]
+separator_style = { fg = "#3c3836", bg = "#282828" }
+
+normal_main = { fg = "#1d2021", bg = "#7daea3", bold = true }
+normal_alt  = { fg = "#7daea3", bg = "#3c3836" }
+select_main = { fg = "#1d2021", bg = "#a9b665", bold = true }
+select_alt  = { fg = "#a9b665", bg = "#3c3836" }
+unset_main  = { fg = "#1d2021", bg = "#d3869b", bold = true }
+unset_alt   = { fg = "#d3869b", bg = "#3c3836" }
+
+progress_label  = { fg = "#ebdbb2", bold = true }
+progress_normal = { fg = "#7daea3", bg = "#282828" }
+progress_error  = { fg = "#ea6962", bg = "#282828" }
+
+perm_type  = { fg = "#a9b665" }
+perm_read  = { fg = "#d8a657" }
+perm_write = { fg = "#ea6962" }
+perm_exec  = { fg = "#7daea3" }
+perm_sep   = { fg = "#928374" }

@@ -1,0 +1,20 @@
+#!/bin/bash
+# Open yazi with home + mounted drives as tabs.
+# Skips drives that aren't currently mounted.
+
+DRIVES=(
+  /mnt/hdd1
+  /mnt/media
+  /mnt/hdd2
+  /mnt/hdd3
+  /mnt/storage-ssd
+  /mnt/storage-m2
+)
+
+PATHS=("$HOME")
+
+for drive in "${DRIVES[@]}"; do
+  mountpoint -q "$drive" && PATHS+=("$drive")
+done
+
+exec yazi "${PATHS[@]}"
