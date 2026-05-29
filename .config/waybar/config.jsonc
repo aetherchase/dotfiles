@@ -157,7 +157,7 @@
   "custom/layout": {
     "exec": "~/.config/waybar/layout-toggle.sh",
     "return-type": "json",
-    "interval": 1,
+    "interval": 3600,
     "signal": 11,
     "on-click": "~/.config/waybar/layout-toggle.sh --toggle",
     "tooltip": true
