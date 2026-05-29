@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT=$(basename "$0")
+
+usage() {
+  cat <<EOF
+Usage: $SCRIPT <subcommand> [options]
+
+Subcommands:
+  analyze          Show disk usage breakdown
+  clean            Interactively clean disk hogs
+  clean --dry-run  Show what clean would do without making changes
+EOF
+  exit 1
+}
+
+cmd_analyze() {
+  echo "analyze: not yet implemented"
+  exit 1
+}
+
+cmd_clean() {
+  echo "clean: not yet implemented"
+  exit 1
+}
+
+[[ $# -eq 0 ]] && usage
+
+CMD="$1"
+shift
+
+case "$CMD" in
+  analyze) cmd_analyze "$@" ;;
+  clean)   cmd_clean "$@" ;;
+  *)       usage ;;
+esac
