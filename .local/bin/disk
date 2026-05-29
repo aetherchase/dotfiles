@@ -16,8 +16,41 @@ EOF
 }
 
 cmd_analyze() {
-  echo "analyze: not yet implemented"
-  exit 1
+  local bold='\033[1m' reset='\033[0m'
+
+  echo -e "\n${bold}=== Disk Overview ===${reset}"
+  df -h /
+
+  echo -e "\n${bold}=== Known Hogs ===${reset}"
+
+  local snap_count
+  snap_count=$(sudo snapper list 2>/dev/null | tail -n +3 | grep -c . || echo "0")
+  printf "Snapper snapshots:  %s\n" "$snap_count"
+
+  local pkg_cache
+  pkg_cache=$(sudo du -sh /var/cache/pacman/pkg/ 2>/dev/null | cut -f1 || echo "unknown")
+  printf "Pacman cache:       %s\n" "$pkg_cache"
+
+  local journal_line
+  journal_line=$(journalctl --disk-usage 2>/dev/null | grep -oP 'take up \K[^\.]+' || echo "unknown")
+  printf "Systemd journal:    %s\n" "$journal_line"
+
+  local home_cache
+  home_cache=$(du -sh ~/.cache 2>/dev/null | cut -f1 || echo "unknown")
+  printf "~/.cache:           %s\n" "$home_cache"
+
+  local downloads
+  downloads=$(du -sh ~/Downloads 2>/dev/null | cut -f1 || echo "(not found)")
+  printf "~/Downloads:        %s\n" "$downloads"
+
+  echo -e "\n${bold}=== Top 10 Dirs in ~ ===${reset}"
+  du -sh ~/.[^.]* ~/* 2>/dev/null | sort -rh | head -10
+
+  echo -e "\n${bold}=== btrfs Subvolumes ===${reset}"
+  sudo btrfs subvolume list / 2>/dev/null || echo "(requires sudo)"
+
+  echo -e "\n${bold}=== btrfs Filesystem Usage ===${reset}"
+  sudo btrfs filesystem usage / 2>/dev/null || echo "(requires sudo)"
 }
 
 cmd_clean() {
