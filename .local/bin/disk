@@ -54,9 +54,48 @@ cmd_analyze() {
 }
 
 cmd_clean() {
-  echo "clean: not yet implemented"
-  exit 1
+  local dry_run=false
+  [[ "${1:-}" == "--dry-run" ]] && dry_run=true
+
+  local yellow='\033[33m' bold='\033[1m' reset='\033[0m'
+
+  if $dry_run; then
+    echo -e "${yellow}DRY RUN — no changes will be made${reset}\n"
+  else
+    echo "Checking sudo access..."
+    sudo -v || { echo "sudo required. Exiting."; exit 1; }
+  fi
+
+  module_snapper    "$dry_run"
+  module_pacman     "$dry_run"
+  module_journal    "$dry_run"
+  module_home_cache "$dry_run"
+
+  echo -e "\n${bold}Done.${reset}"
 }
+
+# Ask y/N — returns 0 for yes, 1 for no
+confirm() {
+  local prompt="$1"
+  read -r -p "$prompt [y/N] " ans
+  [[ "${ans,,}" == "y" ]]
+}
+
+# dry_run=true: echo the command. Otherwise: run it.
+run_cmd() {
+  local dry_run="$1"
+  shift
+  if [[ "$dry_run" == "true" ]]; then
+    echo "  [dry-run] $*"
+  else
+    "$@"
+  fi
+}
+
+module_snapper()    { echo "(snapper module not yet implemented)"; }
+module_pacman()     { echo "(pacman module not yet implemented)"; }
+module_journal()    { echo "(journal module not yet implemented)"; }
+module_home_cache() { echo "(home cache module not yet implemented)"; }
 
 [[ $# -eq 0 ]] && usage
 
