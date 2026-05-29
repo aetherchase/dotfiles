@@ -38,7 +38,7 @@ Four modules run sequentially. Each prints what it will do, asks `y/N`, then act
 | snapper | delete all snapshots except 3 newest | `snapper delete <ids>` |
 | pacman cache | keep 2 versions per package | `paccache -rk2` |
 | journal | vacuum to 200M | `journalctl --vacuum-size=200M` |
-| home cache | show `~/.cache` subdirs by size, user picks which to delete | `rm -rf` per selection |
+| home cache | show `~/.cache` subdirs by size as numbered list, user enters numbers to delete | `rm -rf` per selection |
 
 `--dry-run` flag replaces all destructive calls with `echo` equivalents, printing what would run.
 
