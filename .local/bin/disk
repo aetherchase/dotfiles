@@ -197,6 +197,10 @@ module_home_cache() {
   [[ -z "$input" ]] && { echo "Skipped."; return; }
 
   for n in $input; do
+    if ! [[ "$n" =~ ^[0-9]+$ ]]; then
+      echo "Invalid: $n — skipping"
+      continue
+    fi
     local idx=$((n - 1))
     if [[ $idx -lt 0 || $idx -ge $count ]]; then
       echo "Invalid: $n — skipping"
