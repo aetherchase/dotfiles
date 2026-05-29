@@ -92,7 +92,44 @@ run_cmd() {
   fi
 }
 
-module_snapper()    { echo "(snapper module not yet implemented)"; }
+module_snapper() {
+  local dry_run="$1"
+  local bold='\033[1m' reset='\033[0m'
+
+  echo -e "\n${bold}--- Snapper Snapshots ---${reset}"
+
+  local -a snap_nums
+  mapfile -t snap_nums < <(sudo snapper list --columns number 2>/dev/null \
+    | tail -n +2 \
+    | tr -d ' ' \
+    | grep -v '^0$' \
+    | grep -v '^$')
+
+  local total="${#snap_nums[@]}"
+
+  if [[ $total -eq 0 ]]; then
+    echo "No snapshots found."
+    return
+  fi
+
+  local keep=3
+  echo "Found $total snapshot(s). Keeping $keep newest."
+
+  if [[ $total -le $keep ]]; then
+    echo "Nothing to delete ($total ≤ $keep)."
+    return
+  fi
+
+  local -a to_delete=("${snap_nums[@]:0:$((total - keep))}")
+  echo "Will delete: ${to_delete[*]}"
+
+  confirm "Delete ${#to_delete[@]} snapshot(s)?" || { echo "Skipped."; return; }
+
+  for num in "${to_delete[@]}"; do
+    run_cmd "$dry_run" sudo snapper delete "$num"
+  done
+  echo "Done."
+}
 module_pacman()     { echo "(pacman module not yet implemented)"; }
 module_journal()    { echo "(journal module not yet implemented)"; }
 module_home_cache() { echo "(home cache module not yet implemented)"; }
