@@ -44,7 +44,7 @@ cmd_analyze() {
   printf "~/Downloads:        %s\n" "$downloads"
 
   echo -e "\n${bold}=== Top 10 Dirs in ~ ===${reset}"
-  du -sh ~/.[^.]* ~/* 2>/dev/null | sort -rh | head -10
+  du -sh ~/.[^.]* ~/* 2>/dev/null | sort -rh | head -10 || true
 
   echo -e "\n${bold}=== btrfs Subvolumes ===${reset}"
   sudo btrfs subvolume list / 2>/dev/null || echo "(requires sudo)"
