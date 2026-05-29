@@ -130,8 +130,40 @@ module_snapper() {
   done
   echo "Done."
 }
-module_pacman()     { echo "(pacman module not yet implemented)"; }
-module_journal()    { echo "(journal module not yet implemented)"; }
+module_pacman() {
+  local dry_run="$1"
+  local bold='\033[1m' reset='\033[0m'
+
+  echo -e "\n${bold}--- Pacman Cache ---${reset}"
+
+  if ! command -v paccache &>/dev/null; then
+    echo "paccache not found — install pacman-contrib to enable this module."
+    return
+  fi
+
+  echo "Preview (keeping 2 versions per package):"
+  sudo paccache -dk2 2>/dev/null | tail -5
+
+  confirm "Run paccache -rk2?" || { echo "Skipped."; return; }
+
+  run_cmd "$dry_run" sudo paccache -rk2
+}
+module_journal() {
+  local dry_run="$1"
+  local bold='\033[1m' reset='\033[0m'
+
+  echo -e "\n${bold}--- Systemd Journal ---${reset}"
+
+  local current
+  current=$(journalctl --disk-usage 2>/dev/null \
+    | grep -oP 'take up \K[^\.]+' || echo "unknown")
+  echo "Current size: $current"
+  echo "Target:       200M"
+
+  confirm "Vacuum journal to 200M?" || { echo "Skipped."; return; }
+
+  run_cmd "$dry_run" sudo journalctl --vacuum-size=200M
+}
 module_home_cache() { echo "(home cache module not yet implemented)"; }
 
 [[ $# -eq 0 ]] && usage
