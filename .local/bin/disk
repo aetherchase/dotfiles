@@ -164,7 +164,50 @@ module_journal() {
 
   run_cmd "$dry_run" sudo journalctl --vacuum-size=200M
 }
-module_home_cache() { echo "(home cache module not yet implemented)"; }
+module_home_cache() {
+  local dry_run="$1"
+  local bold='\033[1m' reset='\033[0m'
+
+  echo -e "\n${bold}--- Home Cache (~/.cache) ---${reset}"
+
+  local total
+  total=$(du -sh ~/.cache 2>/dev/null | cut -f1 || echo "unknown")
+  echo "Total ~/.cache: $total"
+  echo ""
+
+  local -a dirs sizes
+  while IFS=$'\t' read -r size dir; do
+    sizes+=("$size")
+    dirs+=("$dir")
+  done < <(du -sh ~/.cache/*/ 2>/dev/null | sort -rh | head -20)
+
+  local count="${#dirs[@]}"
+
+  if [[ $count -eq 0 ]]; then
+    echo "No subdirectories found."
+    return
+  fi
+
+  for i in "${!dirs[@]}"; do
+    printf "  %2d) %-8s %s\n" "$((i+1))" "${sizes[$i]}" "${dirs[$i]}"
+  done
+
+  echo ""
+  read -r -p "Numbers to delete (space-separated), or Enter to skip: " input
+  [[ -z "$input" ]] && { echo "Skipped."; return; }
+
+  for n in $input; do
+    local idx=$((n - 1))
+    if [[ $idx -lt 0 || $idx -ge $count ]]; then
+      echo "Invalid: $n — skipping"
+      continue
+    fi
+    local target="${dirs[$idx]}"
+    echo "Deleting: $target"
+    run_cmd "$dry_run" rm -rf "$target"
+  done
+  echo "Done."
+}
 
 [[ $# -eq 0 ]] && usage
 
