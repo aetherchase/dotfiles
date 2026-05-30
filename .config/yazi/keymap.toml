@@ -1,0 +1,33 @@
+# Per-folder preference persistence via pref-by-location.yazi.
+# Each sort/hidden change is chained with `plugin pref-by-location -- save`
+# so the choice is remembered for that directory across sessions.
+# prepend_keymap keeps all of yazi's built-in bindings.
+
+[mgr]
+prepend_keymap = [
+  # Toggle hidden files (and remember per folder)
+  { on = ".", run = [ "hidden toggle", "plugin pref-by-location -- save" ], desc = "Toggle hidden files" },
+
+  # Run hovered file in the background: no window, no yazi takeover.
+  # setsid -f detaches it; output discarded so it never garbles yazi's screen.
+  { on = "X", run = "shell 'setsid -f \"%h\" >/dev/null 2>&1' --orphan", desc = "Run hovered file (background)" },
+
+  # Plugin control
+  { on = [ ",", "t" ], run = "plugin pref-by-location -- toggle",  desc = "Toggle auto-save preferences" },
+  { on = [ ",", "d" ], run = "plugin pref-by-location -- disable", desc = "Disable auto-save preferences" },
+  { on = [ ",", "R" ], run = [ "plugin pref-by-location -- reset" ], desc = "Reset preference of cwd" },
+
+  # Sorting (each remembers the choice for the current folder)
+  { on = [ ",", "n" ], run = [ "sort natural --reverse=no",      "plugin pref-by-location -- save" ], desc = "Sort naturally" },
+  { on = [ ",", "N" ], run = [ "sort natural --reverse",         "plugin pref-by-location -- save" ], desc = "Sort naturally (reverse)" },
+  { on = [ ",", "a" ], run = [ "sort alphabetical --reverse=no", "plugin pref-by-location -- save" ], desc = "Sort alphabetically" },
+  { on = [ ",", "A" ], run = [ "sort alphabetical --reverse",    "plugin pref-by-location -- save" ], desc = "Sort alphabetically (reverse)" },
+  { on = [ ",", "m" ], run = [ "sort mtime --reverse=no", "linemode mtime", "plugin pref-by-location -- save" ], desc = "Sort by modified time" },
+  { on = [ ",", "M" ], run = [ "sort mtime --reverse",    "linemode mtime", "plugin pref-by-location -- save" ], desc = "Sort by modified time (reverse)" },
+  { on = [ ",", "b" ], run = [ "sort btime --reverse=no", "linemode btime", "plugin pref-by-location -- save" ], desc = "Sort by birth time" },
+  { on = [ ",", "B" ], run = [ "sort btime --reverse",    "linemode btime", "plugin pref-by-location -- save" ], desc = "Sort by birth time (reverse)" },
+  { on = [ ",", "e" ], run = [ "sort extension --reverse=no", "plugin pref-by-location -- save" ], desc = "Sort by extension" },
+  { on = [ ",", "E" ], run = [ "sort extension --reverse",    "plugin pref-by-location -- save" ], desc = "Sort by extension (reverse)" },
+  { on = [ ",", "s" ], run = [ "sort size --reverse=no", "linemode size", "plugin pref-by-location -- save" ], desc = "Sort by size" },
+  { on = [ ",", "S" ], run = [ "sort size --reverse",    "linemode size", "plugin pref-by-location -- save" ], desc = "Sort by size (reverse)" },
+]

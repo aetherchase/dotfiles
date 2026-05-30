@@ -1,0 +1,7 @@
+[[plugin.deps]]
+use = "boydaihungst/pref-by-location"
+rev = "8d355f5"
+hash = "9ddac64e0db5178e2710fa6cfc2dd004"
+
+[flavor]
+deps = []

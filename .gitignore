@@ -1,3 +1,17 @@
 *.bak
 *.bak.*
 *.new
+
+# yazi plugins managed by `ya pkg` — restore from package.toml
+.config/yazi/plugins/
+
+# yazi runtime state
+.config/yazi/*.db
+.config/yazi/*.db-*
+
+# editor/OS junk
+*.swp
+*~
+.DS_Store
+__pycache__/
+*.pyc

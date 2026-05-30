@@ -1,0 +1,6 @@
+# Enter opens files with system default app (xdg-open) instead of $EDITOR.
+# prepend_rules wins over yazi's built-in text/* -> edit rule.
+[open]
+prepend_rules = [
+	{ mime = "*/*", use = "open" },
+]
