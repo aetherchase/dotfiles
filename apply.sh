@@ -28,6 +28,16 @@ if ! grep -qF "$PLUGINS_SOURCE" "$HYPR_CONF" 2>/dev/null; then
     echo "Patched $HYPR_CONF to source plugins.conf"
 fi
 
+# Ensure hyprland.conf sources envs.conf (machine env, e.g. NVIDIA — Omarchy template omits this source line)
+ENVS_SOURCE="source = ~/.config/hypr/envs.conf"
+
+if ! grep -qF "$ENVS_SOURCE" "$HYPR_CONF" 2>/dev/null; then
+    echo "" >> "$HYPR_CONF"
+    echo "# Machine env (managed by dotfiles/apply.sh)" >> "$HYPR_CONF"
+    echo "$ENVS_SOURCE" >> "$HYPR_CONF"
+    echo "Patched $HYPR_CONF to source envs.conf"
+fi
+
 # Install hyprpm build dependencies
 yay -S --needed --noconfirm cmake gcc git cpio pkgconf
 

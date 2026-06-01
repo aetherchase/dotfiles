@@ -16,9 +16,11 @@ stow --target=$HOME .
 dotfiles/
   .config/
     hypr/
-      bindings.conf   # keybindings (custom apps, lang switch)
-      input.conf      # keyboard layouts, mouse accel
-      monitors.conf   # display scaling
+      bindings.conf       # keybindings (custom apps, lang switch)
+      input.conf          # shared input: kb layout, scroll, gestures
+      input-devices.conf  # machine-specific: mouse peripheral tuning
+      monitors.conf       # machine-specific: display scaling
+      envs.conf           # machine-specific: env vars (NVIDIA)
 ```
 
 ## Adding new configs
