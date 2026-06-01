@@ -3,6 +3,13 @@ set -euo pipefail
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Ask for sudo once upfront, then refresh the timestamp in the background
+# so later yay/hyprpm calls reuse it instead of prompting again.
+sudo -v
+( while true; do sudo -n true; sleep 60; kill -0 "$$" 2>/dev/null || exit; done ) 2>/dev/null &
+SUDO_KEEPALIVE_PID=$!
+trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true' EXIT
+
 echo "Symlinking dotfiles from: $DOTFILES_DIR"
 
 stow --dir="$DOTFILES_DIR" --target="$HOME" --restow .
