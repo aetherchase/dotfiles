@@ -239,6 +239,7 @@
       "^blueman-manager$": "Bluetooth",
       "^nm-connection-editor$": "Network",
       "^(?:gnome-control-center|org\\.gnome\\.Settings)$": "Settings",
+      "^io\\.missioncenter\\.MissionCenter$": "Mission Center",
       "^(?:steam|Steam)$": "Steam",
       "^lutris$": "Lutris",
       "^heroic$": "Heroic",
