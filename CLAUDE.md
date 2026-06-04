@@ -22,15 +22,18 @@ git add . && git commit
 .config/
   alacritty/alacritty.toml   # imports Omarchy base, overrides opacity
   hypr/
-    bindings.conf       # keybindings, app launchers, language switch
+    bindings.conf       # keybindings, app launchers, language switch, mouse scroll/zoom binds
     hypridle.conf       # idle/lock timers
     input.conf          # shared input: kb layout, scroll, gestures; sources input-devices.conf
     input-devices.conf  # MACHINE: mouse device blocks (peripheral names, flat accel, sensitivity)
-    looknfeel.conf      # borders, gaps, cursor, blur, opacity
+    looknfeel.conf      # borders, gaps, cursor, blur, opacity, zoomFactor animation
     monitors.conf       # MACHINE: display scaling (scale 1.3 on DP-2 2560x1440)
     envs.conf           # MACHINE: env vars (NVIDIA VA-API); sourced via apply.sh patch
     rules.conf          # window rules; sourced via apply.sh patch
     plugins.conf        # hyprexpo task view + keyboard submap
+    scripts/
+      cursor-zoom.sh        # SUPER+scroll screen magnifier (steps cursor:zoom_factor)
+      workspace-scroll.sh   # CTRL+SUPER+scroll workspace switch w/ per-bind debounce
 .claude/
   settings.local.json   # Claude Code local overrides (not stowed to HOME)
 ```
@@ -41,7 +44,7 @@ Files in this repo — owned by dotfiles, Omarchy updates ignored:
 
 | File | Why owned |
 |------|-----------|
-| `hypr/bindings.conf` | custom keybindings (hyprexpo, language switch) |
+| `hypr/bindings.conf` | custom keybindings (hyprexpo, language switch, scroll/zoom binds) |
 | `hypr/hypridle.conf` | custom idle/lock timers |
 | `hypr/input.conf` | shared input (kb layout `us,ru`, scroll, gestures); sources `input-devices.conf` |
 | `hypr/input-devices.conf` | **machine-specific**: mouse peripheral tuning (device names, flat accel, sensitivity `-0.3`) |
@@ -49,6 +52,7 @@ Files in this repo — owned by dotfiles, Omarchy updates ignored:
 | `hypr/monitors.conf` | **machine-specific**: display scaling (scale `1.3` on DP-2 2560x1440) |
 | `hypr/envs.conf` | **machine-specific**: env vars (NVIDIA VA-API); apply.sh patches hyprland.conf to source it |
 | `hypr/plugins.conf` | hyprexpo plugin (not in Omarchy) |
+| `hypr/scripts/` | helper scripts for binds (cursor-zoom, workspace-scroll); not in Omarchy |
 | `alacritty/alacritty.toml` | imports Omarchy base, adds opacity override |
 
 Files Omarchy owns — do NOT add to this repo:
