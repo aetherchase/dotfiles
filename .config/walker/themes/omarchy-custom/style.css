@@ -1,0 +1,56 @@
+/* Inherit stock omarchy-default walker styling + the active theme's colors,
+   then override for a frosted-glass "spotlight" look:
+   translucent floating card, drop shadow, rounded search pill, accent selection.
+   Backdrop blur is NOT a CSS feature in GTK4 — it comes from the Hyprland
+   layerrule (blur, match:namespace walker) in ~/.config/hypr/looknfeel.conf. */
+@import "/home/keroqq/.local/share/omarchy/default/walker/themes/omarchy-default/style.css";
+
+/* Floating translucent card */
+.box-wrapper {
+  background: alpha(@base, 0.72);
+  border: 1px solid alpha(@selected-text, 0.45);
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 140px;                              /* top-anchored spotlight offset (valign=start in layout.xml) */
+  box-shadow: 0 14px 48px 0 alpha(black, 0.55);
+}
+
+/* Search field as a rounded inset pill */
+.search-container {
+  background: alpha(@text, 0.06);
+  border: 1px solid alpha(@text, 0.10);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 6px;
+}
+
+.input {
+  font-size: 20px;
+}
+
+/* Result rows: roomy, rounded, with a smooth selection transition */
+child {
+  border-radius: 12px;
+  margin: 2px 4px;
+  transition: background 120ms ease;
+}
+
+child:hover {
+  background: alpha(@text, 0.05);
+}
+
+/* Selection = accent pill + accent left bar */
+child:selected {
+  background: alpha(@selected-text, 0.16);
+  box-shadow: inset 3px 0 0 0 @selected-text;
+}
+
+.item-box {
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+
+.item-image {
+  -gtk-icon-transform: scale(1.0);
+  margin-right: 14px;
+}

@@ -26,7 +26,7 @@ git add . && git commit
     hypridle.conf       # idle/lock timers
     input.conf          # shared input: kb layout, scroll, gestures; sources input-devices.conf
     input-devices.conf  # MACHINE: mouse device blocks (peripheral names, flat accel, sensitivity)
-    looknfeel.conf      # borders, gaps, cursor, blur, opacity, zoomFactor animation
+    looknfeel.conf      # borders, gaps, cursor, blur, opacity, zoomFactor animation, walker blur layerrule
     monitors.conf       # MACHINE: display scaling (scale 1.3 on DP-2 2560x1440)
     envs.conf           # MACHINE: env vars (NVIDIA VA-API); sourced via apply.sh patch
     rules.conf          # window rules; sourced via apply.sh patch
@@ -34,6 +34,11 @@ git add . && git commit
     scripts/
       cursor-zoom.sh        # SUPER+scroll screen magnifier (steps cursor:zoom_factor)
       workspace-scroll.sh   # CTRL+SUPER+scroll workspace switch w/ per-bind debounce
+  walker/
+    config.toml                 # launcher: theme=omarchy-custom, providers, prefixes
+    themes/omarchy-custom/
+      style.css                 # frosted-glass: @imports stock omarchy-default + translucent card, shadow, rounded search/selection pill
+      layout.xml                # COPY of stock omarchy-default layout (not symlink): wider 760px + top-anchored (valign=start)
 .claude/
   settings.local.json   # Claude Code local overrides (not stowed to HOME)
 ```
@@ -48,12 +53,14 @@ Files in this repo — owned by dotfiles, Omarchy updates ignored:
 | `hypr/hypridle.conf` | custom idle/lock timers |
 | `hypr/input.conf` | shared input (kb layout `us,ru`, scroll, gestures); sources `input-devices.conf` |
 | `hypr/input-devices.conf` | **machine-specific**: mouse peripheral tuning (device names, flat accel, sensitivity `-0.3`) |
-| `hypr/looknfeel.conf` | appearance preferences |
+| `hypr/looknfeel.conf` | appearance preferences; `layerrule = blur` on walker namespace (pairs with walker theme) |
 | `hypr/monitors.conf` | **machine-specific**: display scaling (scale `1.3` on DP-2 2560x1440) |
 | `hypr/envs.conf` | **machine-specific**: env vars (NVIDIA VA-API); apply.sh patches hyprland.conf to source it |
 | `hypr/plugins.conf` | hyprexpo plugin (not in Omarchy) |
 | `hypr/scripts/` | helper scripts for binds (cursor-zoom, workspace-scroll); not in Omarchy |
 | `alacritty/alacritty.toml` | imports Omarchy base, adds opacity override |
+| `walker/config.toml` | launcher config: points theme at custom `omarchy-custom` |
+| `walker/themes/omarchy-custom/` | custom Walker theme: `style.css` @imports stock omarchy-default + frosted-glass overrides; `layout.xml` is a copy (won't track upstream layout changes) |
 
 Files Omarchy owns — do NOT add to this repo:
 
@@ -67,6 +74,7 @@ Files Omarchy owns — do NOT add to this repo:
 ## References
 
 - [hyprexpo docs](https://hyprexpo.lol/docs/) — task view plugin (SUPER+TAB), config in `.config/hypr/plugins.conf`
+- Walker theme `omarchy-custom` @imports stock `~/.local/share/omarchy/default/walker/themes/omarchy-default/style.css` (absolute path) so per-theme colors + theme switching keep working; only borders/glass are overridden. GTK4 has no CSS backdrop-blur — blur comes from the Hyprland `layerrule` in `looknfeel.conf`.
 
 ## Rules
 
