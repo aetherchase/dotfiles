@@ -5,7 +5,7 @@
   "margin": "4 4 0 4",
   "spacing": 0,
   "height": 38,
-  "modules-left": ["clock", "hyprland/window", "custom/weather", "custom/update", "custom/voxtype", "custom/screenrecording-indicator", "custom/idle-indicator", "custom/notification-silencing-indicator"],
+  "modules-left": ["clock", "group/status-pill", "hyprland/window"],
   "modules-center": ["group/workspaces-pill", "custom/layout"],
   "modules-right": [
     "tray",
@@ -154,6 +154,10 @@
     "orientation": "inherit",
     "modules": ["custom/omarchy", "hyprland/workspaces"]
   },
+  "group/status-pill": {
+    "orientation": "inherit",
+    "modules": ["custom/weather", "custom/update", "custom/voxtype", "custom/screenrecording-indicator", "custom/idle-indicator", "custom/notification-silencing-indicator"]
+  },
   "custom/layout": {
     "exec": "~/.config/waybar/layout-toggle.sh",
     "return-type": "json",
@@ -254,11 +258,11 @@
     "tooltip": false
   },
   "custom/weather": {
-    "exec": "$OMARCHY_PATH/default/waybar/weather.sh",
+    "exec": "~/.config/waybar/weather.sh",
     "return-type": "json",
-    "interval": 60,
-    "tooltip": false,
-    "on-click": "notify-send -u low \"$(omarchy-weather-status)\""
+    "interval": 600,
+    "tooltip": true,
+    "on-click": "~/.config/waybar/weather.sh --notify"
   },
   "network": {
     "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],

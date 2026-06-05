@@ -13,9 +13,18 @@ window#waybar {
   background-color: transparent;
 }
 
-.modules-left,
+/* Left side is a transparent rail — its children (clock, app-name, status) are
+   each their own standalone hairline pill. Right side stays one grouped pill. */
+.modules-left {
+  background: transparent;
+  margin: 0 4px;
+  padding: 0;
+  color: mix(@foreground, white, 0.25);
+}
+
 .modules-right {
   background-color: alpha(@background, 0.6);
+  border: 1px solid alpha(@foreground, 0.12);   /* neutral hairline — matches launcher card + window borders */
   border-radius: 12px;
   margin: 4px 4px;
   padding: 0 20px;
@@ -31,6 +40,7 @@ window#waybar {
 
 #workspaces-pill {
   background-color: alpha(@background, 0.6);
+  border: 1px solid alpha(@foreground, 0.12);
   border-radius: 12px;
   margin: 4px 4px;
   padding: 0 20px;
@@ -38,6 +48,7 @@ window#waybar {
 
 #custom-layout {
   background-color: alpha(@background, 0.6);
+  border: 1px solid alpha(@foreground, 0.12);
   border-radius: 12px;
   margin: 4px 4px;
   padding: 0 16px;
@@ -51,7 +62,8 @@ window#waybar {
 tooltip {
   background-color: @background;
   color: @foreground;
-  border-radius: 8px;
+  border: 1px solid alpha(@foreground, 0.12);
+  border-radius: 12px;
   padding: 2px;
 }
 
@@ -121,15 +133,31 @@ tooltip {
   font-size: 10px;
 }
 
+/* Left rail: three standalone hairline pills — clock | weather+status | app-name.
+   App-name sits rightmost. Weather is fed by ~/.config/waybar/weather.sh so the
+   status pill always has content (no empty blob). */
 #clock {
-  margin-left: 8.75px;
+  background-color: alpha(@background, 0.6);
+  border: 1px solid alpha(@foreground, 0.12);
+  border-radius: 12px;
+  margin: 4px 0 4px 4px;
+  padding: 0 14px;
+}
+
+#status-pill {
+  background-color: alpha(@background, 0.6);
+  border: 1px solid alpha(@foreground, 0.12);
+  border-radius: 12px;
+  margin: 4px 0 4px 6px;
+  padding: 0 12px;
 }
 
 #window {
-  background-color: alpha(@background, 0.5);
-  border-radius: 10px;
-  margin: 6px 4px 6px 12px;
-  padding: 0 12px;
+  background-color: alpha(@background, 0.6);
+  border: 1px solid alpha(@foreground, 0.12);
+  border-radius: 12px;
+  margin: 4px 0 4px 6px;
+  padding: 0 14px;
 }
 
 #custom-weather {

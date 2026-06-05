@@ -17,7 +17,7 @@
         <style>
           <class name="box-wrapper"></class>
         </style>
-        <property name="width-request">760</property>
+        <property name="width-request">680</property>
         <property name="overflow">hidden</property>
         <property name="orientation">horizontal</property>
         <property name="valign">start</property>

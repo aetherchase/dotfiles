@@ -8,49 +8,88 @@
 /* Floating translucent card */
 .box-wrapper {
   background: alpha(@base, 0.72);
-  border: 1px solid alpha(@selected-text, 0.45);
+  border: 1px solid alpha(@text, 0.12);           /* neutral hairline (shadow + blur do the lifting) */
   border-radius: 16px;
   padding: 16px;
   margin-top: 140px;                              /* top-anchored spotlight offset (valign=start in layout.xml) */
   box-shadow: 0 14px 48px 0 alpha(black, 0.55);
 }
 
-/* Search field as a rounded inset pill */
+/* Search field — A+B: seamless (no box, hairline divider) + inset to align with item pills */
 .search-container {
-  background: alpha(@text, 0.06);
-  border: 1px solid alpha(@text, 0.10);
-  border-radius: 12px;
-  padding: 12px 14px;
-  margin-bottom: 6px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid alpha(@text, 0.12);
+  border-radius: 0;
+  padding: 4px 4px 14px 4px;
+  margin: 0 8px 8px 8px;   /* inset so divider + text line up with item pills */
 }
 
 .input {
-  font-size: 20px;
+  font-size: 21px;
 }
 
-/* Result rows: roomy, rounded, with a smooth selection transition */
-child {
-  border-radius: 12px;
-  margin: 2px 4px;
-  transition: background 120ms ease;
-}
-
-child:hover {
-  background: alpha(@text, 0.05);
-}
-
-/* Selection = accent pill + accent left bar */
+/* Highlight lives on .item-box so selection is a single clean inset pill.
+   Neutralize the stock cell-level background/shadow to avoid a doubled box. */
+child,
 child:selected {
-  background: alpha(@selected-text, 0.16);
-  box-shadow: inset 3px 0 0 0 @selected-text;
+  background: transparent;
+  box-shadow: none;
 }
 
+/* Fixed row height so one-line and two-line items are uniform (~search-box height).
+   min-height does the sizing; padding stays minimal. */
 .item-box {
-  padding: 12px 14px;
-  border-radius: 12px;
+  margin: 2px 8px;
+  min-height: 50px;
+  padding: 2px 12px;
+  border-radius: 10px;
+  transition: background 100ms ease;
+}
+
+/* Stock pads this 14px top+bottom — collapse it; min-height drives height now. */
+.item-text-box {
+  padding: 0;
+}
+
+/* Subtle hover */
+child:hover .item-box {
+  background: alpha(@text, 0.06);
+}
+
+/* Selection: one soft-fill rounded pill — no border, no accent bar */
+child:selected .item-box {
+  background: alpha(@selected-text, 0.16);
+}
+
+/* Keep the selected label readable (stock tints it accent-on-accent) */
+child:selected .item-box * {
+  color: @text;
 }
 
 .item-image {
-  -gtk-icon-transform: scale(1.0);
+  -gtk-icon-size: 30px;
   margin-right: 14px;
+}
+
+/* Two-line rows: un-hide the description subtext (stock kills it with font-size:0).
+   Sized small so two lines fit inside the fixed 50px row.
+   Apps without a .desktop Comment just render an empty line. */
+.item-text {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Description rendered inline after the name (item_desktopapplications.xml makes
+   the text box horizontal). Decoration is typographic: gap + dim + smaller.
+   Empty descriptions collapse to zero width, so apps without one show name only. */
+.item-subtext {
+  font-size: 14px;
+  color: alpha(@text, 0.4);
+  margin-left: 9px;
+}
+
+/* Keep subtext dim even on the selected row (override the readable-text rule above) */
+child:selected .item-box .item-subtext {
+  color: alpha(@text, 0.6);
 }
