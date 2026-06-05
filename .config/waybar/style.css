@@ -16,8 +16,8 @@ window#waybar {
   background-color: transparent;
 }
 
-/* Left side is a transparent rail — its children (clock, app-name, status) are
-   each their own standalone hairline pill. Right side stays one grouped pill. */
+/* Left side is a transparent rail — its children (clock, status, app-name) are
+   each their own standalone hairline pill. */
 .modules-left {
   background: transparent;
   margin: 0 4px;
@@ -25,13 +25,22 @@ window#waybar {
   color: mix(@foreground, white, 0.25);
 }
 
+/* Right side is now a transparent rail like the left; #right-pill (a group box)
+   carries the pill styling so it sizes like the working group pills (#status-pill,
+   #workspaces-pill). The raw .modules-right box ignores min-height. */
 .modules-right {
+  background: transparent;
+  margin: 0 4px;
+  padding: 0;
+  color: mix(@foreground, white, 0.25);
+}
+
+#right-pill {
   background-color: alpha(@background, 0.85);
   border: 1px solid alpha(@foreground, 0.25);   /* neutral hairline — matches launcher card + window borders */
   border-radius: 12px;
   margin: 4px 4px;
   padding: 0 20px;
-  color: mix(@foreground, white, 0.25);
 }
 
 .modules-center {
@@ -79,64 +88,44 @@ tooltip {
   font-family: 'JetBrainsMono Nerd Font';
   font-size: 16px;
   padding: 0 14px 0 8px;
-  margin: 6px 2px;          /* vertical inset = centered pill; horizontal = gap between groups */
+  margin: 0 2px;            /* no vertical margin — pill min-height centers the tile (inset); horizontal = gap between groups */
   min-width: 9px;
   opacity: 0.6;
 }
 
+/* hover/active only recolor — geometry inherited from base so the tile never
+   shifts or resizes between states. */
 #workspaces button:hover {
-  all: unset;
   background-color: alpha(@accent, 0.12);
-  border-radius: 10px;
-  color: @foreground;
-  font-family: 'JetBrainsMono Nerd Font';
-  font-size: 16px;
-  padding: 0 14px 0 8px;
-  margin: 6px 2px;
-  min-width: 9px;
-  opacity: 0.85;
+  opacity: 0.7;
 }
 
 #workspaces button.active {
   background-color: alpha(@accent, 0.28);
   color: @accent;
-  opacity: 1;
+  opacity: 0.8;
 }
 
 
+/* Right pill icons: 18px glyphs with even 16px gaps (margin 0 8px each side). */
+#tray,
+#bluetooth,
+#network,
+#wireplumber,
 #cpu,
 #memory,
-#battery,
-#pulseaudio,
+#battery {
+  min-width: 12px;
+  margin: 0 8px;
+  font-size: 18px;
+}
+
+/* Omarchy menu logo (center pill) + update counter (status pill): keep the
+   shared min-width + side margin, but default 16px — no right-pill enlargement. */
 #custom-omarchy,
 #custom-update {
   min-width: 12px;
   margin: 0 7.5px;
-}
-
-#memory {
-  margin-right: 0;
-}
-
-#tray {
-  margin-right: 16px;
-}
-
-#bluetooth {
-  margin-right: 17px;
-}
-
-#network {
-  margin-right: 13px;
-}
-
-#custom-expand-icon {
-  margin-right: 18px;
-}
-
-
-#custom-update {
-  font-size: 10px;
 }
 
 /* Left rail: three standalone hairline pills — clock | weather+status | app-name.
@@ -166,6 +155,18 @@ tooltip {
   padding: 0 14px;
 }
 
+/* Uniform pill height — every pill fills the same 28px content box
+   (bar 38 - 4px margin x2 - 1px border x2). Natural text content is
+   shorter, so this floor governs and all pills match exactly. */
+#right-pill,
+#workspaces-pill,
+#custom-layout,
+#clock,
+#status-pill,
+#window {
+  min-height: 28px;
+}
+
 #custom-weather {
   margin-left: 7.5px;
   margin-right: 7.5px;
@@ -187,7 +188,6 @@ tooltip {
   min-width: 12px;
   margin-left: 5px;
   margin-right: 0;
-  font-size: 10px;
   padding-bottom: 1px;
 }
 

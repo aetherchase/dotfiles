@@ -7,15 +7,7 @@
   "height": 38,
   "modules-left": ["clock", "group/status-pill", "hyprland/window"],
   "modules-center": ["group/workspaces-pill", "custom/layout"],
-  "modules-right": [
-    "tray",
-    "bluetooth",
-    "network",
-    "wireplumber",
-    "memory",
-    "cpu",
-    "battery"
-  ],
+  "modules-right": ["group/right-pill"],
   "hyprland/workspaces": {
     "on-click": "activate",
     "on-scroll-up": "hyprctl dispatch workspace e-1",
@@ -150,6 +142,10 @@
   "group/status-pill": {
     "orientation": "inherit",
     "modules": ["custom/weather", "custom/update", "custom/voxtype", "custom/screenrecording-indicator", "custom/idle-indicator", "custom/notification-silencing-indicator"]
+  },
+  "group/right-pill": {
+    "orientation": "inherit",
+    "modules": ["tray", "bluetooth", "network", "wireplumber", "memory", "cpu", "battery"]
   },
   "custom/layout": {
     "exec": "~/.config/waybar/layout-toggle.sh",
@@ -369,7 +365,7 @@
     "on-click": "omarchy-voxtype-model"
   },
   "tray": {
-    "icon-size": 12,
-    "spacing": 17
+    "icon-size": 16,
+    "spacing": 15
   }
 }
