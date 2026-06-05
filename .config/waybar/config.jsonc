@@ -135,13 +135,6 @@
       "class<thunderbird>": "󰇮",
       "class<org.gnome.Calculator>": "󰃬",
       "class<qalculate-gtk>": "󰃬"
-    },
-    "persistent-workspaces": {
-      "1": [],
-      "2": [],
-      "3": [],
-      "4": [],
-      "5": []
     }
   },
   "custom/omarchy": {

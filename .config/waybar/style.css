@@ -1,4 +1,7 @@
 @import "../omarchy/current/theme/waybar.css";
+/* Theme waybar.css only defines foreground/background. Accent is static (Gruvbox teal);
+   to track per-theme, add `@define-color accent <hex>;` to each theme's waybar.css. */
+@define-color accent #7daea3;
 
 * {
   color: @foreground;
@@ -23,8 +26,8 @@ window#waybar {
 }
 
 .modules-right {
-  background-color: alpha(@background, 0.6);
-  border: 1px solid alpha(@foreground, 0.12);   /* neutral hairline — matches launcher card + window borders */
+  background-color: alpha(@background, 0.85);
+  border: 1px solid alpha(@foreground, 0.25);   /* neutral hairline — matches launcher card + window borders */
   border-radius: 12px;
   margin: 4px 4px;
   padding: 0 20px;
@@ -39,16 +42,16 @@ window#waybar {
 }
 
 #workspaces-pill {
-  background-color: alpha(@background, 0.6);
-  border: 1px solid alpha(@foreground, 0.12);
+  background-color: alpha(@background, 0.85);
+  border: 1px solid alpha(@foreground, 0.25);
   border-radius: 12px;
   margin: 4px 4px;
-  padding: 0 20px;
+  padding: 0 6px;          /* tight — inner tiles supply their own spacing */
 }
 
 #custom-layout {
-  background-color: alpha(@background, 0.6);
-  border: 1px solid alpha(@foreground, 0.12);
+  background-color: alpha(@background, 0.85);
+  border: 1px solid alpha(@foreground, 0.25);
   border-radius: 12px;
   margin: 4px 4px;
   padding: 0 16px;
@@ -62,38 +65,41 @@ window#waybar {
 tooltip {
   background-color: @background;
   color: @foreground;
-  border: 1px solid alpha(@foreground, 0.12);
+  border: 1px solid alpha(@foreground, 0.25);
   border-radius: 12px;
   padding: 2px;
 }
 
 #workspaces button {
-  background: transparent;
+  background-color: alpha(@foreground, 0.06);   /* faint tile bounds each workspace group */
   border: none;
-  border-radius: 4px;
+  border-radius: 10px;
   box-shadow: none;
   color: @foreground;
   font-family: 'JetBrainsMono Nerd Font';
   font-size: 16px;
-  padding: 0 6px;
-  margin: 0 1.5px;
+  padding: 0 14px 0 8px;
+  margin: 6px 2px;          /* vertical inset = centered pill; horizontal = gap between groups */
   min-width: 9px;
-  opacity: 0.5;
+  opacity: 0.6;
 }
 
 #workspaces button:hover {
   all: unset;
-  background-color: transparent;
+  background-color: alpha(@accent, 0.12);
+  border-radius: 10px;
   color: @foreground;
   font-family: 'JetBrainsMono Nerd Font';
   font-size: 16px;
-  padding: 0 6px;
-  margin: 0 1.5px;
+  padding: 0 14px 0 8px;
+  margin: 6px 2px;
   min-width: 9px;
   opacity: 0.85;
 }
 
 #workspaces button.active {
+  background-color: alpha(@accent, 0.28);
+  color: @accent;
   opacity: 1;
 }
 
@@ -137,24 +143,24 @@ tooltip {
    App-name sits rightmost. Weather is fed by ~/.config/waybar/weather.sh so the
    status pill always has content (no empty blob). */
 #clock {
-  background-color: alpha(@background, 0.6);
-  border: 1px solid alpha(@foreground, 0.12);
+  background-color: alpha(@background, 0.85);
+  border: 1px solid alpha(@foreground, 0.25);
   border-radius: 12px;
   margin: 4px 0 4px 4px;
   padding: 0 14px;
 }
 
 #status-pill {
-  background-color: alpha(@background, 0.6);
-  border: 1px solid alpha(@foreground, 0.12);
+  background-color: alpha(@background, 0.85);
+  border: 1px solid alpha(@foreground, 0.25);
   border-radius: 12px;
   margin: 4px 0 4px 6px;
   padding: 0 12px;
 }
 
 #window {
-  background-color: alpha(@background, 0.6);
-  border: 1px solid alpha(@foreground, 0.12);
+  background-color: alpha(@background, 0.85);
+  border: 1px solid alpha(@foreground, 0.25);
   border-radius: 12px;
   margin: 4px 0 4px 6px;
   padding: 0 14px;
