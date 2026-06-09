@@ -64,11 +64,21 @@ window#waybar {
   border-radius: 12px;
   margin: 4px 4px;
   padding: 0 16px;
-  opacity: 0.6;
+  opacity: 0.85;
+  transition: background-color 0.06s linear, opacity 0.06s linear;   /* match workspace tiles */
 }
 
 #custom-layout.float {
-  opacity: 1;
+  opacity: 0.9;
+}
+
+/* Accent hover. Pill base bg is near-opaque (0.85), so tint it toward accent
+   instead of replacing with faint accent (which would read as transparent). */
+#custom-layout:hover {
+  background-color: alpha(mix(@background, @accent, 0.35), 0.9);
+  background-image: none;
+  box-shadow: none;
+  opacity: 0.9;
 }
 
 tooltip {
@@ -91,19 +101,31 @@ tooltip {
   margin: 0 2px;            /* no vertical margin — pill min-height centers the tile (inset); horizontal = gap between groups */
   min-width: 9px;
   opacity: 0.6;
+  transition: background-color 0.06s linear, opacity 0.06s linear;   /* fast, no easing; overrides slow GTK theme default */
 }
 
 /* hover/active only recolor — geometry inherited from base so the tile never
    shifts or resizes between states. */
 #workspaces button:hover {
-  background-color: alpha(@accent, 0.12);
-  opacity: 0.7;
+  background-color: alpha(@accent, 0.22);
+  background-image: none;    /* kill GTK default hover gradient that paints OVER our bg */
+  box-shadow: none;          /* kill GTK default hover box-shadow/highlight */
+  opacity: 1;                /* snap from base 0.6 to full — unmistakable hover */
 }
 
 #workspaces button.active {
-  background-color: alpha(@accent, 0.28);
+  background-color: alpha(@accent, 0.24);
   color: @accent;
-  opacity: 0.8;
+  opacity: 0.85;
+}
+
+/* Hovering the active tile must not fall back to the weaker plain-hover style.
+   Specificity beats both button:hover and button.active — active intensifies. */
+#workspaces button.active:hover {
+  background-color: alpha(@accent, 0.38);
+  background-image: none;
+  box-shadow: none;
+  opacity: 1;
 }
 
 

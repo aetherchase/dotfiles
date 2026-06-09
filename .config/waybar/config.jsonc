@@ -12,7 +12,7 @@
     "on-click": "activate",
     "on-scroll-up": "hyprctl dispatch workspace e-1",
     "on-scroll-down": "hyprctl dispatch workspace e+1",
-    "format": "{name} {windows}",
+    "format": "{name} {windows}",
     "format-window-separator": " ",
     "window-rewrite-default": "󰣆",
     "window-rewrite": {
@@ -137,7 +137,7 @@
   },
   "group/workspaces-pill": {
     "orientation": "inherit",
-    "modules": ["custom/omarchy", "hyprland/workspaces"]
+    "modules": ["hyprland/workspaces"]
   },
   "group/status-pill": {
     "orientation": "inherit",
