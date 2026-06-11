@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# clip — copy a file to the Wayland clipboard as a file-object or as text.
+#
+# Usage:  clip <path> [file|text]
+#
+#   file   put a file:// URI on the clipboard (text/uri-list) — pastes as a
+#          FILE in file managers (Nautilus/Thunar/Dolphin).
+#   text   put the file CONTENTS on the clipboard (text/plain) — pastes into
+#          editors / chats.
+#   (omitted) auto: binary -> file, text -> text.
+#
+# Why setsid: wl-copy forks a daemon that owns the selection (Wayland keeps
+# clipboard data in the source process). When invoked from a sandboxed/agent
+# shell the process group is reaped on exit, killing the daemon and emptying
+# the clipboard. setsid detaches it so it survives.
+
+set -euo pipefail
+
+die() { printf 'clip: %s\n' "$1" >&2; exit 1; }
+
+[ $# -ge 1 ] || die "usage: clip <path> [file|text]"
+
+path=$1
+mode=${2:-auto}
+
+[ -f "$path" ] || die "no such file: $path"
+abs=$(readlink -f -- "$path")
+
+if command -v wl-copy >/dev/null 2>&1; then
+  backend=wayland
+elif command -v xclip >/dev/null 2>&1; then
+  backend=x11
+else
+  die "no clipboard tool — install wl-clipboard (Wayland) or xclip (X11)"
+fi
+
+if [ "$mode" = auto ]; then
+  info=$(file --mime --brief -- "$abs" 2>/dev/null || echo application/octet-stream)
+  case "$info" in
+    text/*|*charset=us-ascii*|*charset=utf-8*|*json*|*xml*|*javascript*) mode=text ;;
+    *) mode=file ;;
+  esac
+fi
+
+case "$mode" in
+  file|text) ;;
+  *) die "mode must be 'file' or 'text' (got: $mode)" ;;
+esac
+
+if [ "$backend" = wayland ]; then
+  if [ "$mode" = file ]; then
+    printf 'file://%s\r\n' "$abs" | setsid wl-copy --type text/uri-list
+  else
+    setsid wl-copy <"$abs"
+  fi
+else
+  if [ "$mode" = file ]; then
+    printf 'file://%s\n' "$abs" | xclip -selection clipboard -t text/uri-list
+  else
+    xclip -selection clipboard <"$abs"
+  fi
+fi
+
+printf 'clip: copied %s as %s (%s)\n' "$abs" "$mode" "$backend"
