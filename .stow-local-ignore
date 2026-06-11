@@ -9,3 +9,5 @@
 # Docs/project files not meant for HOME
 README\.md
 CLAUDE\.md
+# System files installed to /etc, not HOME (see system/install-*.sh)
+system

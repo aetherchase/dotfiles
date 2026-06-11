@@ -1,0 +1,9 @@
+# Grant the active desktop user WebHID access to ATK keyboards (Hex80 etc.).
+# Without this, /dev/hidrawN for vendor 373b is root:root 0600 — the browser
+# (running as your user) sees the device in Chrome's HID chooser but open()
+# fails, so the v3-hub.atk.store configurator reports "driver cannot recognize".
+# TAG+="uaccess" applies a dynamic ACL granting the logged-in session rw.
+# Install: sudo cp system/50-atk-keyboard.rules /etc/udev/rules.d/ &&
+#          sudo udevadm control --reload-rules && sudo udevadm trigger
+# Then unplug + replug the keyboard. Verify: getfacl /dev/hidraw6
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="373b", MODE="0660", TAG+="uaccess"
