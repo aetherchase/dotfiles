@@ -1,0 +1,40 @@
+@import "../omarchy/current/theme/swayosd.css";
+
+/* Frosted-glass OSD toast (volume / brightness / keyboard layout).
+   Translucent background + neutral hairline + rounded, to match the waybar
+   pills. The actual blur behind the translucency comes from a Hyprland
+   `layerrule = blur` on the `swayosd` namespace (hypr/looknfeel.conf) — GTK has
+   no CSS backdrop-blur, same situation as the walker launcher.
+   The widget is `window#osd` (id selector); style that, not bare `window`,
+   so the translucency is not lost to a more-specific rule. */
+window#osd {
+  border-radius: 12px;
+  border: 1px solid alpha(@label, 0.25);
+  background-color: alpha(@background-color, 0.30);
+  /* Kill GTK4/Adwaita default window drop-shadow (ugly dark blob under the
+     translucent pill on the layer surface). */
+  box-shadow: none;
+}
+
+window#osd #container {
+  margin: 16px;
+  background-color: transparent;
+}
+
+window#osd label {
+  font-family: 'JetBrainsMono Nerd Font';
+  font-size: 11pt;
+  color: @label;
+}
+
+window#osd image {
+  color: @image;
+}
+
+window#osd progressbar {
+  border-radius: 12px;
+}
+
+window#osd progress {
+  background-color: @progress;
+}

@@ -12,7 +12,11 @@ trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true' EXIT
 
 echo "Symlinking dotfiles from: $DOTFILES_DIR"
 
-stow --dir="$DOTFILES_DIR" --target="$HOME" --restow .
+# --no-folding: create real directories and symlink individual files, instead of
+# symlinking whole directories. Required so systemd drop-in dirs
+# (e.g. ~/.config/systemd/user/*.service.d) are REAL dirs — systemd does not
+# traverse a symlinked .d directory, so a folded symlink silently drops the override.
+stow --no-folding --dir="$DOTFILES_DIR" --target="$HOME" --restow .
 
 # Ensure hyprland.conf sources rules.conf and plugins.conf
 HYPR_CONF="$HOME/.config/hypr/hyprland.conf"
