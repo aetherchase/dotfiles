@@ -1,84 +1,122 @@
 # CLAUDE.md
 
-Personal Arch Linux + Omarchy + Hyprland dotfiles managed with GNU Stow. Every file maps 1:1 to `$HOME` via symlinks.
+Personal Arch Linux + Omarchy + Hyprland dotfiles managed with GNU Stow. Files live under `features/<package>/` and each maps 1:1 to `$HOME` via symlinks. The repo is **feature-sliced**: `apply.sh` stows a per-host subset of packages (see [Feature packages](#feature-packages)).
 
 ## Commands
 
 ```bash
-# Restow all symlinks
+# Install the default feature set (features.conf), or a per-host subset (features.local)
 ./apply.sh
 
-# Add untracked config to repo
-cp ~/.config/<app>/file .config/<app>/file
-# edit .config/<app>/file in this repo
+# Install an explicit subset (core is always added); also UNSTOWS everything else
+./apply.sh core yazi waybar
+
+# Add untracked config to repo — pick the right feature package (or core)
+mkdir -p features/<pkg>/.config/<app>
+cp ~/.config/<app>/file features/<pkg>/.config/<app>/file
+# edit features/<pkg>/.config/<app>/file in this repo
 rm ~/.config/<app>/file          # remove real file so stow can create symlink
 ./apply.sh
 git add . && git commit
 ```
 
+Selection precedence: **CLI args > `features.local` (gitignored, per-host) > `features.conf` (committed default)**. `core` is always installed. Any package not selected is `stow -D`'d (clean deselection), so dropping a feature = remove its line and re-run `./apply.sh`.
+
 ## Structure
 
+Each `features/<pkg>/` is a self-contained Stow package mirroring `$HOME`. `apply.sh` runs `stow --dir=features --target=$HOME <selected pkgs>`. Repo/docs/system files live ABOVE `features/` so stow never sees them.
+
 ```
-.config/
-  alacritty/alacritty.toml   # imports Omarchy base, overrides opacity
-  hypr/
-    bindings.conf       # keybindings, app launchers, language switch, mouse scroll/zoom binds
-    hypridle.conf       # idle/lock timers
-    input.conf          # shared input: kb layout, scroll, gestures; sources input-devices.conf
-    input-devices.conf  # MACHINE: mouse device blocks (peripheral names, Windows pointer-accel custom curve)
-    looknfeel.conf      # borders, gaps, cursor, blur, opacity, zoomFactor animation, walker blur layerrule
-    monitors.conf       # MACHINE: display scaling (scale 1.3 on DP-2 2560x1440)
-    envs.conf           # MACHINE: env vars (NVIDIA VA-API); sourced via apply.sh patch
-    rules.conf          # window rules; sourced via apply.sh patch
-    plugins.conf        # hyprexpo task view + keyboard submap
-    scripts/
-      cursor-zoom.sh        # SUPER+scroll screen magnifier (steps cursor:zoom_factor)
-      workspace-scroll.sh   # CTRL+SUPER+scroll workspace switch w/ per-bind debounce
-      lang-switch.sh        # SUPER+SPACE: forces ALL keyboards to same xkb index (resync) + swayosd toast
-      keybind-lookup.py     # SUPER+K: hotkeys panel (full list, type-to-search) that ALSO filters live when you press a binding chord (grab + uinput passthrough)
-      win-accel.py          # generator: Windows-10 SmoothMouseXCurve -> libinput custom accel points for input-devices.conf
-  swayosd/
-    style.css                   # ONLY style.css symlinked (config.toml left as Omarchy's); frosted-glass OSD toast matching waybar pills
-  walker/
-    config.toml                 # launcher: theme=omarchy-custom, providers, prefixes
-    themes/omarchy-custom/
-      style.css                 # frosted-glass: @imports stock omarchy-default + translucent card, shadow, rounded search/selection pill
-      layout.xml                # COPY of stock omarchy-default layout (not symlink): wider 760px + top-anchored (valign=start)
-  systemd/user/
-    scroll-debounce.service     # user service: runs scroll-debounce daemon; autostart on login
-    swayosd-server.service.d/override.conf  # drop-in: GSK_RENDERER=cairo so OSD rounded corners anti-alias (GL renderer jaggers them)
-.local/bin/
-  scroll-debounce               # MACHINE: python-evdev daemon — drops phantom reverse-scroll ticks from worn mouse encoder (Compx 2.4G)
-system/                         # NOT stowed (.stow-local-ignore) — reference copies of files installed to /etc
+features.conf                  # committed default feature list (one pkg per line)
+features.local                 # GITIGNORED per-host override (optional)
+features/
+  .stow-local-ignore           # only ignores itself; nothing else is under the stow dir
+  core/                        # ALWAYS installed: shared/base + machine-specific config
+    .config/alacritty/alacritty.toml   # imports Omarchy base, overrides opacity
+    .config/kitty/kitty.conf
+    .config/gtk-3.0/settings.ini
+    .config/omarchy/hooks/theme-set
+    .config/hypr/
+      bindings.conf       # keybindings, app launchers, language switch, mouse scroll/zoom binds
+      hypridle.conf       # idle/lock timers
+      input.conf          # shared input: kb layout, scroll, gestures; sources input-devices.conf
+      input-devices.conf  # MACHINE: mouse device blocks (peripheral names, Windows pointer-accel custom curve)
+      looknfeel.conf      # borders, gaps, cursor, blur, opacity, zoomFactor animation, walker/swayosd/mako blur layerrules
+      monitors.conf       # MACHINE: display scaling (scale 1.3 on DP-2 2560x1440)
+      envs.conf           # MACHINE: env vars (NVIDIA VA-API); sourced via apply.sh patch
+      rules.conf          # window rules; sourced via apply.sh patch
+      plugins.conf        # hyprexpo task view + keyboard submap
+      float-daemon.py     # floating-window helper
+      scripts/
+        cursor-zoom.sh        # SUPER+scroll screen magnifier (steps cursor:zoom_factor)
+        workspace-scroll.sh   # CTRL+SUPER+scroll workspace switch w/ per-bind debounce
+        lang-switch.sh        # SUPER+SPACE: forces ALL keyboards to same xkb index (resync) + swayosd toast
+        brightness-ddc.sh     # monitor brightness via ddcutil
+        win-accel.py          # generator: Windows-10 SmoothMouseXCurve -> libinput custom accel points for input-devices.conf
+    .local/bin/{clip,disk,yazi-tabs}
+  scroll-debounce/             # worn-mouse scroll filter (daemon + user service)
+    .local/bin/scroll-debounce            # MACHINE: python-evdev daemon — drops phantom reverse-scroll ticks (Compx 2.4G)
+    .config/systemd/user/scroll-debounce.service   # user service: runs daemon; autostart on login
+  swayosd-glass/               # frosted-glass OSD toast + cairo renderer fix
+    .config/swayosd/style.css             # ONLY style.css symlinked (config.toml left as Omarchy's)
+    .config/systemd/user/swayosd-server.service.d/override.conf  # GSK_RENDERER=cairo so OSD corners anti-alias
+  walker-theme/                # custom launcher theme
+    .config/walker/config.toml            # launcher: theme=omarchy-custom, providers, prefixes
+    .config/walker/themes/omarchy-custom/
+      style.css                # frosted-glass: @imports stock omarchy-default + translucent card, shadow, rounded pill
+      layout.xml               # COPY of stock omarchy-default layout (not symlink): wider 760px + top-anchored
+  yazi/                        # file manager (.config/yazi/*; plugins/ gitignored, restored by `ya pkg`)
+  waybar/                      # status bar (config.jsonc, style.css, layout-toggle.sh, weather.sh)
+  keybind-lookup/
+    .config/hypr/scripts/keybind-lookup.py  # SUPER+K: hotkeys panel + live chord reverse-lookup (grab + uinput)
+system/                        # NOT stowed — reference copies of files installed to /etc (pairs with scroll-debounce pkg)
   99-scroll-debounce-uinput.rules  # udev: /dev/uinput -> input group (lets user service create virtual device)
   install-scroll-debounce.sh       # one-time installer: python-evdev + udev rule + enable user service
-.claude/
-  settings.local.json   # Claude Code local overrides (not stowed to HOME)
+.claude/                       # Claude Code local overrides (not stowed to HOME)
 ```
+
+Both `core` and `keybind-lookup` ship `.config/hypr/scripts/` — stow merges them into one real dir (it only conflicts on two packages claiming the same FILE path).
+
+## Feature packages
+
+`apply.sh` stows `core` plus the selected feature packages; deselected ones are `stow -D`'d. Selection precedence: **CLI args > `features.local` > `features.conf`**; `core` is always added + de-duplicated.
+
+| Package | What it is | Selectable |
+|---------|-----------|------------|
+| `core` | all shared/base + machine-specific config (hypr `.conf` files, scripts, alacritty, kitty, gtk, omarchy hook, `.local/bin/{clip,disk,yazi-tabs}`) | no — always on |
+| `scroll-debounce` | python-evdev scroll filter daemon + user service (pairs with `system/` udev rule) | yes |
+| `swayosd-glass` | frosted-glass OSD `style.css` + cairo-renderer drop-in | yes |
+| `walker-theme` | custom Walker launcher theme + config | yes |
+| `yazi` | yazi file manager config | yes |
+| `waybar` | status bar config + scripts | yes |
+| `keybind-lookup` | SUPER+K hotkeys panel script | yes |
+
+Small script/plugin features (cursor-zoom, workspace-scroll, lang-switch, brightness-ddc, float-daemon, hyprexpo) live in `core`: their bind/plugin lines are in `core`'s `bindings.conf`/`plugins.conf`, so splitting them out would only create dangling references.
 
 ## Ownership boundary
 
-Files in this repo — owned by dotfiles, Omarchy updates ignored:
+Files in this repo — owned by dotfiles, Omarchy updates ignored. Paths below are relative to a package's root; **Pkg** names the feature package the file lives in:
 
-| File | Why owned |
-|------|-----------|
-| `hypr/bindings.conf` | custom keybindings (hyprexpo, language switch, scroll/zoom binds) |
-| `hypr/hypridle.conf` | custom idle/lock timers |
-| `hypr/input.conf` | shared input (kb layout `us,ru`, scroll, gestures); sources `input-devices.conf` |
-| `hypr/input-devices.conf` | **machine-specific**: mouse peripheral tuning (device names + `accel_profile = custom` Windows pointer-accel curve, generated by `scripts/win-accel.py`) |
-| `hypr/looknfeel.conf` | appearance preferences; `layerrule = blur` on walker + swayosd namespaces (pair with walker theme + swayosd OSD glass) |
-| `hypr/monitors.conf` | **machine-specific**: display scaling (scale `1.3` on DP-2 2560x1440) |
-| `hypr/envs.conf` | **machine-specific**: env vars (NVIDIA VA-API); apply.sh patches hyprland.conf to source it |
-| `hypr/plugins.conf` | hyprexpo plugin (not in Omarchy) |
-| `hypr/scripts/` | helper scripts for binds (cursor-zoom, workspace-scroll, lang-switch); `win-accel.py` = mouse-accel curve generator; not in Omarchy |
-| `swayosd/style.css` | frosted-glass OSD toast (translucent bg + hairline + 12px radius, matches waybar pills); **only style.css symlinked**, `config.toml` left as Omarchy's. NO CSS hot-reload — reload after edit: `omarchy restart swayosd`. Corners anti-alias only with the cairo renderer drop-in below. |
-| `.config/systemd/user/swayosd-server.service.d/override.conf` | drop-in forcing `GSK_RENDERER=cairo` — GTK4's GL renderer aliases the OSD pill's rounded corners (jagged "ladder" over high-contrast bg + fractional scale); cairo fixes it. Drop-in **dir must be a real dir** (systemd ignores symlinked `.d` dirs) — that's why `apply.sh` uses `stow --no-folding`. |
-| `alacritty/alacritty.toml` | imports Omarchy base, adds opacity override |
-| `walker/config.toml` | launcher config: points theme at custom `omarchy-custom` |
-| `walker/themes/omarchy-custom/` | custom Walker theme: `style.css` @imports stock omarchy-default + frosted-glass overrides; `layout.xml` is a copy (won't track upstream layout changes) |
-| `.local/bin/scroll-debounce` | **machine-specific**: filters phantom reverse-scroll ticks from a worn mouse encoder; `SD_DEVICE_NAME` defaults to `Compx 2.4G Wireless Receiver` |
-| `.config/systemd/user/scroll-debounce.service` | user service running the daemon; `SD_WINDOW_MS` (default 50) tunes the debounce window, `SD_DEBUG=1` logs drops |
-| `system/` | **not stowed**: udev rule + installer for scroll-debounce; targets `/etc`, run `system/install-scroll-debounce.sh` once per host |
+| File | Pkg | Why owned |
+|------|-----|-----------|
+| `hypr/bindings.conf` | core | custom keybindings (hyprexpo, language switch, scroll/zoom binds) |
+| `hypr/hypridle.conf` | core | custom idle/lock timers |
+| `hypr/input.conf` | core | shared input (kb layout `us,ru`, scroll, gestures); sources `input-devices.conf` |
+| `hypr/input-devices.conf` | core | **machine-specific**: mouse peripheral tuning (device names + `accel_profile = custom` Windows pointer-accel curve, generated by `scripts/win-accel.py`) |
+| `hypr/looknfeel.conf` | core | appearance preferences; `layerrule = blur` on walker + swayosd + mako namespaces (pair with walker theme + swayosd OSD glass) |
+| `hypr/monitors.conf` | core | **machine-specific**: display scaling (scale `1.3` on DP-2 2560x1440) |
+| `hypr/envs.conf` | core | **machine-specific**: env vars (NVIDIA VA-API); apply.sh patches hyprland.conf to source it |
+| `hypr/plugins.conf` | core | hyprexpo plugin (not in Omarchy) |
+| `hypr/scripts/` | core | helper scripts for binds (cursor-zoom, workspace-scroll, lang-switch, brightness-ddc); `win-accel.py` = mouse-accel curve generator; not in Omarchy |
+| `swayosd/style.css` | swayosd-glass | frosted-glass OSD toast (translucent bg + hairline + 12px radius, matches waybar pills); **only style.css symlinked**, `config.toml` left as Omarchy's. NO CSS hot-reload — reload after edit: `omarchy restart swayosd`. Corners anti-alias only with the cairo renderer drop-in below. |
+| `.config/systemd/user/swayosd-server.service.d/override.conf` | swayosd-glass | drop-in forcing `GSK_RENDERER=cairo` — GTK4's GL renderer aliases the OSD pill's rounded corners (jagged "ladder" over high-contrast bg + fractional scale); cairo fixes it. Drop-in **dir must be a real dir** (systemd ignores symlinked `.d` dirs) — that's why `apply.sh` uses `stow --no-folding`. |
+| `alacritty/alacritty.toml` | core | imports Omarchy base, adds opacity override |
+| `walker/config.toml` | walker-theme | launcher config: points theme at custom `omarchy-custom` |
+| `walker/themes/omarchy-custom/` | walker-theme | custom Walker theme: `style.css` @imports stock omarchy-default + frosted-glass overrides; `layout.xml` is a copy (won't track upstream layout changes) |
+| `.local/bin/scroll-debounce` | scroll-debounce | **machine-specific**: filters phantom reverse-scroll ticks from a worn mouse encoder; `SD_DEVICE_NAME` defaults to `Compx 2.4G Wireless Receiver` |
+| `.config/systemd/user/scroll-debounce.service` | scroll-debounce | user service running the daemon; `SD_WINDOW_MS` (default 50) tunes the debounce window, `SD_DEBUG=1` logs drops |
+| `hypr/scripts/keybind-lookup.py` | keybind-lookup | SUPER+K hotkeys panel + live chord reverse-lookup |
+| `system/` | (not stowed) | udev rule + installer for scroll-debounce; targets `/etc`, run `system/install-scroll-debounce.sh` once per host |
 
 Files Omarchy owns — do NOT add to this repo:
 
@@ -101,8 +139,10 @@ Files Omarchy owns — do NOT add to this repo:
 
 ## Rules
 
-- **Never edit `~/.config/` paths directly** — edit files in this repo only
-- **Machine-specific config** (`monitors.conf`, `envs.conf`, `input-devices.conf`) is isolated for portability — on a new host, edit only these. `monitors.conf`/`envs.conf` began as Omarchy templates and are now dotfiles-owned, so `omarchy refresh` would write through the symlink into the repo.
-- Hyprland config is split: `hyprland.conf` sources each `.conf` in `.config/hypr/` — add new files for new features
+- **Never edit `~/.config/` paths directly** — edit files in this repo only (under `features/<pkg>/`)
+- **New files go under a feature package** — `features/<pkg>/.config/...`. Pick the matching feature, or `core` for shared/base config. Each file must live in exactly ONE package (stow conflicts on two packages owning the same target path).
+- **Machine-specific config** (`core/.config/hypr/{monitors,envs,input-devices}.conf`) is isolated for portability — on a new host, edit only these. `monitors.conf`/`envs.conf` began as Omarchy templates and are now dotfiles-owned, so `omarchy refresh` would write through the symlink into the repo.
+- Hyprland config is split: `hyprland.conf` sources each `.conf` in `~/.config/hypr/` — add new hypr `.conf` files under `features/core/.config/hypr/`
 - `alacritty.toml` imports `~/.local/share/omarchy/config/alacritty/alacritty.toml` — Omarchy alacritty updates flow through automatically
+- `apply.sh` stows from `features/` with `--no-folding`; dropping a feature requires re-running `apply.sh` (it `stow -D`'s the complement) — don't `rm` symlinks by hand
 - Check `.gitignore` before adding new files

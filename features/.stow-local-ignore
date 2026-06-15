@@ -1,0 +1,4 @@
+# Stow meta — never symlink the ignore file itself.
+# Repo/docs/system files live ABOVE features/, so stow never sees them and
+# they need no entries here.
+\.stow-local-ignore

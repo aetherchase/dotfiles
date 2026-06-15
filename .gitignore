@@ -2,12 +2,15 @@
 *.bak.*
 *.new
 
+# per-host feature selection (override of features.conf)
+features.local
+
 # yazi plugins managed by `ya pkg` — restore from package.toml
-.config/yazi/plugins/
+features/yazi/.config/yazi/plugins/
 
 # yazi runtime state
-.config/yazi/*.db
-.config/yazi/*.db-*
+features/yazi/.config/yazi/*.db
+features/yazi/.config/yazi/*.db-*
 
 # editor/OS junk
 *.swp

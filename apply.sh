@@ -2,6 +2,31 @@
 set -euo pipefail
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FEATURES_DIR="$DOTFILES_DIR/features"
+
+# --- Resolve which feature packages to install ---------------------------------
+# Order of precedence: CLI args  >  features.local  >  features.conf.
+# `core` is always installed (prepended + de-duplicated below).
+if [ "$#" -gt 0 ]; then
+    REQUESTED=("$@")
+elif [ -f "$DOTFILES_DIR/features.local" ]; then
+    mapfile -t REQUESTED < <(grep -vE '^\s*(#|$)' "$DOTFILES_DIR/features.local")
+else
+    mapfile -t REQUESTED < <(grep -vE '^\s*(#|$)' "$DOTFILES_DIR/features.conf")
+fi
+
+declare -A seen; SELECTED=()
+for f in core "${REQUESTED[@]}"; do
+    [ -n "${seen[$f]:-}" ] && continue
+    if [ ! -d "$FEATURES_DIR/$f" ]; then
+        echo "WARN: no feature package '$f' under features/, skipping" >&2
+        continue
+    fi
+    seen[$f]=1; SELECTED+=("$f")
+done
+
+echo "Symlinking features from: $FEATURES_DIR"
+echo "Selected: ${SELECTED[*]}"
 
 # Ask for sudo once upfront, then refresh the timestamp in the background
 # so later yay/hyprpm calls reuse it instead of prompting again.
@@ -10,13 +35,25 @@ sudo -v
 SUDO_KEEPALIVE_PID=$!
 trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true' EXIT
 
-echo "Symlinking dotfiles from: $DOTFILES_DIR"
+# --- Clean deselection: unstow any package NOT in the selected set -------------
+# Removes dangling symlinks left by a feature that was previously installed but
+# is no longer selected. `stow -D` on a not-stowed package is a harmless no-op.
+for d in "$FEATURES_DIR"/*/; do
+    pkg="$(basename "$d")"
+    [ -n "${seen[$pkg]:-}" ] && continue
+    echo "Unstowing deselected feature: $pkg"
+    stow -D --no-folding --dir="$FEATURES_DIR" --target="$HOME" "$pkg" 2>/dev/null || true
+done
 
+# --- Install the selected packages ---------------------------------------------
 # --no-folding: create real directories and symlink individual files, instead of
 # symlinking whole directories. Required so systemd drop-in dirs
 # (e.g. ~/.config/systemd/user/*.service.d) are REAL dirs — systemd does not
 # traverse a symlinked .d directory, so a folded symlink silently drops the override.
-stow --no-folding --dir="$DOTFILES_DIR" --target="$HOME" --restow .
+# Packages that share a parent dir (e.g. core + keybind-lookup both ship
+# .config/hypr/scripts/) merge into one real dir; stow only conflicts on two
+# packages claiming the same FILE path. Single invocation = atomic conflict check.
+stow --no-folding --dir="$FEATURES_DIR" --target="$HOME" --restow "${SELECTED[@]}"
 
 # Ensure hyprland.conf sources rules.conf and plugins.conf
 HYPR_CONF="$HOME/.config/hypr/hyprland.conf"
@@ -64,4 +101,4 @@ if hyprctl version &>/dev/null; then
     echo "Hyprland config reloaded."
 fi
 
-echo "Done."
+echo "Done. Installed: ${SELECTED[*]}"
