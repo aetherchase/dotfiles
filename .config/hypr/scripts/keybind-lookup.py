@@ -57,11 +57,6 @@ CHORD_MODS = {e.KEY_LEFTMETA, e.KEY_RIGHTMETA, e.KEY_LEFTCTRL,
               e.KEY_RIGHTCTRL, e.KEY_LEFTALT, e.KEY_RIGHTALT}
 
 
-def notify(msg):
-    subprocess.run(["notify-send", "-t", "1500", "Keybindings", msg],
-                   stderr=subprocess.DEVNULL)
-
-
 def build_keysym_map():
     """X11 keycode -> keysym name from the active compiled keymap (same source
     as the panel, so Return->RETURN, e->E align)."""
@@ -148,8 +143,11 @@ class Panel:
                        stderr=subprocess.DEVNULL)
 
     def _spawn(self, lines, prompt):
-        self._close_current()
-        time.sleep(0.12)  # let the daemon tear down the old menu first
+        # Only close + settle when we're REPLACING an open menu (refilter). The
+        # first open has nothing to tear down, so skip the ~240ms of close+sleep.
+        if self.proc is not None:
+            self._close_current()
+            time.sleep(0.12)  # let the daemon tear down the old menu first
         self.proc = subprocess.Popen(
             ["walker", "--dmenu", "-p", prompt,
              "--width", "800", "--height", self.height],
@@ -180,7 +178,10 @@ class Panel:
             self.proc.terminate()
 
 
-def run(kbds, code2sym, all_lines, height):
+def capture_loop(panel, kbds, code2sym):
+    """Grab the keyboards (so chords don't fire), re-inject normal typing to
+    walker, and turn SUPER/CTRL/ALT chords into filters. The panel is already
+    on screen by now — this all runs behind it."""
     fdmap = {d.fd: d for d in kbds}
     for d in kbds:
         d.grab()
@@ -201,9 +202,6 @@ def run(kbds, code2sym, all_lines, height):
     for d in kbds:
         held.update(d.active_keys())
     log(f"initial held={held}")
-
-    panel = Panel(all_lines, height)
-    panel.show_full()
 
     try:
         while True:
@@ -255,22 +253,28 @@ def run(kbds, code2sym, all_lines, height):
 
 def main():
     log("--- start ---")
+    # Critical path to first paint: only the list + walker. Everything needed
+    # for chord capture (device enumeration ~200ms, grab, uinput, keymap) is
+    # deferred until AFTER the menu is on screen.
+    all_lines = subprocess.run(
+        ["omarchy", "menu", "keybindings", "--print"], stdin=subprocess.DEVNULL,
+        capture_output=True, text=True).stdout.splitlines()
+    panel = Panel(all_lines, menu_height())
+    panel.show_full()
+    log("panel shown")
+
+    kbds = find_keyboards()  # the slow part — now hidden behind the open menu
+    if not kbds:
+        log("no keyboard found; plain panel (no chord capture)")
+        if panel.proc:
+            panel.proc.wait()
+        return
     try:
         code2sym = build_keysym_map()
     except Exception as ex:
         log(f"keymap error: {ex}")
-        notify("Keymap error")
-        sys.exit(1)
-    kbds = find_keyboards()
-    if not kbds:
-        log("no keyboard found")
-        notify("No keyboard found")
-        sys.exit(1)
-    all_lines = subprocess.run(
-        ["omarchy", "menu", "keybindings", "--print"], stdin=subprocess.DEVNULL,
-        capture_output=True, text=True).stdout.splitlines()
-    height = menu_height()
-    run(kbds, code2sym, all_lines, height)
+        code2sym = {}
+    capture_loop(panel, kbds, code2sym)
 
 
 if __name__ == "__main__":
