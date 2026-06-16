@@ -1,5 +1,8 @@
 # tests/test_match_wallpapers.py
+import os
+import tempfile
 import unittest
+
 import match_wallpapers as mw
 
 
@@ -51,6 +54,39 @@ class TestCiede2000(unittest.TestCase):
     def test_sharma_pair_3(self):
         d = mw.ciede2000((50.0000, 2.8361, -74.0200), (50.0000, 0.0000, -82.7485))
         self.assertAlmostEqual(d, 3.4412, places=4)
+
+
+class TestParsePalette(unittest.TestCase):
+    SAMPLE = (
+        'accent = "#7fbbb3"\n'
+        'background = "#2d353b"\n'
+        'foreground = "#d3c6aa"\n'
+        'color0 = "#475258"\n'
+        'color1 = "#e67e80"\n'
+        'color2 = "#a7c080"\n'
+        'color3 = "#dbbc7f"\n'
+        'color4 = "#7fbbb3"\n'
+        'color5 = "#d699b6"\n'
+        'color6 = "#83c092"\n'
+        'color7 = "#d3c6aa"\n'
+    )
+
+    def test_hex_to_rgb(self):
+        self.assertEqual(mw.hex_to_rgb("#7fbbb3"), (127, 187, 179))
+
+    def test_parse_uses_match_subset(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "colors.toml")
+            with open(p, "w") as f:
+                f.write(self.SAMPLE)
+            rgbs = mw.parse_palette(p)
+        # background, accent, color1..6 present in sample => 8 entries
+        # (color9..14 absent in this sample, simply skipped)
+        self.assertIn((45, 53, 59), rgbs)      # background
+        self.assertIn((127, 187, 179), rgbs)   # accent
+        self.assertIn((230, 126, 128), rgbs)   # color1
+        self.assertNotIn((71, 82, 88), rgbs)   # color0 excluded
+        self.assertEqual(len(rgbs), 8)
 
 
 if __name__ == "__main__":

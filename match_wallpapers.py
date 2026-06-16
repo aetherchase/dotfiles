@@ -4,6 +4,14 @@ affinity. See docs/superpowers/specs/2026-06-16-wallpaper-theme-matcher-design.m
 from __future__ import annotations
 
 import math
+import tomllib
+
+# Hue-bearing palette keys; color0/7/8/15 (near black/white) are skipped.
+PALETTE_KEYS = (
+    "background", "accent",
+    "color1", "color2", "color3", "color4", "color5", "color6",
+    "color9", "color10", "color11", "color12", "color13", "color14",
+)
 
 
 def passes_ratio(width: int, height: int, min_ratio: float) -> bool:
@@ -89,3 +97,20 @@ def ciede2000(lab1: tuple[float, float, float],
         + (dHp / Sh) ** 2
         + Rt * (dCp / Sc) * (dHp / Sh)
     )
+
+
+def hex_to_rgb(h: str) -> tuple[int, int, int]:
+    h = h.lstrip("#")
+    return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
+
+
+def parse_palette(colors_toml_path: str) -> list[tuple[int, int, int]]:
+    """Return the hue-bearing RGB colors from a theme's colors.toml."""
+    with open(colors_toml_path, "rb") as f:
+        data = tomllib.load(f)
+    out = []
+    for key in PALETTE_KEYS:
+        val = data.get(key)
+        if isinstance(val, str) and val.startswith("#") and len(val) >= 7:
+            out.append(hex_to_rgb(val))
+    return out
