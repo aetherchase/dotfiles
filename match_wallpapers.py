@@ -191,3 +191,52 @@ def write_matches(repo_bg_dir: str, assignments: dict[str, list[str]]) -> None:
             if os.path.lexists(link):
                 os.unlink(link)
             os.symlink(src, link)
+
+
+def _populated_slugs(repo_bg_dir: str) -> list[str]:
+    if not os.path.isdir(repo_bg_dir):
+        return []
+    out = []
+    for name in sorted(os.listdir(repo_bg_dir)):
+        d = os.path.join(repo_bg_dir, name)
+        if name != ".gitkeep" and os.path.isdir(d) and os.listdir(d):
+            out.append(name)
+    return out
+
+
+def relink(repo_bg_dir: str, config_bg_dir: str) -> int:
+    """Create config/<slug> -> repo/<slug> dir-symlinks for populated themes;
+    prune our stale symlinks for themes that no longer qualify. Returns link count."""
+    os.makedirs(config_bg_dir, exist_ok=True)
+    populated = set(_populated_slugs(repo_bg_dir))
+    # prune stale symlinks we own (point into repo_bg_dir) but no longer populated
+    for name in os.listdir(config_bg_dir):
+        link = os.path.join(config_bg_dir, name)
+        if os.path.islink(link):
+            target = os.path.realpath(link)
+            if target.startswith(os.path.realpath(repo_bg_dir)) and name not in populated:
+                os.unlink(link)
+    for slug in populated:
+        link = os.path.join(config_bg_dir, slug)
+        target = os.path.join(repo_bg_dir, slug)
+        if os.path.lexists(link):
+            if os.path.islink(link):
+                os.unlink(link)
+            else:
+                continue  # real dir owned by something else; don't clobber
+        os.symlink(target, link)
+    return len(populated)
+
+
+def unlink(repo_bg_dir: str, config_bg_dir: str) -> int:
+    """Remove config/<slug> symlinks that point into repo_bg_dir. Returns count."""
+    if not os.path.isdir(config_bg_dir):
+        return 0
+    n = 0
+    repo_real = os.path.realpath(repo_bg_dir)
+    for name in os.listdir(config_bg_dir):
+        link = os.path.join(config_bg_dir, name)
+        if os.path.islink(link) and os.path.realpath(link).startswith(repo_real):
+            os.unlink(link)
+            n += 1
+    return n

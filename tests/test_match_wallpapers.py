@@ -176,5 +176,34 @@ class TestWriteMatches(unittest.TestCase):
             self.assertTrue(os.path.exists(os.path.join(repo_bg, ".gitkeep")))  # keeper survives
 
 
+class TestRelink(unittest.TestCase):
+    def test_relink_links_populated_only_and_prunes(self):
+        with tempfile.TemporaryDirectory() as repo_bg, tempfile.TemporaryDirectory() as cfg:
+            os.makedirs(os.path.join(repo_bg, "everforest"))
+            open(os.path.join(repo_bg, "everforest", "a.jpg"), "w").close()
+            os.makedirs(os.path.join(repo_bg, "empty"))   # no files -> skipped
+            # stale live symlink whose repo dir no longer qualifies -> pruned
+            os.symlink(os.path.join(repo_bg, "empty"), os.path.join(cfg, "empty"))
+
+            mw.relink(repo_bg, cfg)
+
+            ef = os.path.join(cfg, "everforest")
+            self.assertTrue(os.path.islink(ef))
+            self.assertEqual(os.readlink(ef), os.path.join(repo_bg, "everforest"))
+            self.assertFalse(os.path.lexists(os.path.join(cfg, "empty")))  # pruned
+
+    def test_unlink_removes_only_symlinks(self):
+        with tempfile.TemporaryDirectory() as repo_bg, tempfile.TemporaryDirectory() as cfg:
+            os.makedirs(os.path.join(repo_bg, "everforest"))
+            open(os.path.join(repo_bg, "everforest", "a.jpg"), "w").close()
+            os.symlink(os.path.join(repo_bg, "everforest"), os.path.join(cfg, "everforest"))
+            os.makedirs(os.path.join(cfg, "realdir"))      # must be left alone
+
+            mw.unlink(repo_bg, cfg)
+
+            self.assertFalse(os.path.lexists(os.path.join(cfg, "everforest")))
+            self.assertTrue(os.path.isdir(os.path.join(cfg, "realdir")))
+
+
 if __name__ == "__main__":
     unittest.main()
