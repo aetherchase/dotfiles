@@ -45,15 +45,16 @@ for d in "$FEATURES_DIR"/*/; do
     stow -D --no-folding --dir="$FEATURES_DIR" --target="$HOME" "$pkg" 2>/dev/null || true
     # wallpapers ships its symlinks straight into ~/.config (not via stow), so
     # stow -D can't remove them — do it explicitly.
-    [ "$pkg" = wallpapers ] && "$DOTFILES_DIR/link-omarchy-wallpapers.sh" --unlink || true
+    [ "$pkg" = wallpapers ] && python3 "$DOTFILES_DIR/match_wallpapers.py" --unlink || true
 done
 
 # --- Regenerate machine-specific wallpaper symlinks (gitignored) ---------------
 # The `wallpapers` package ships NO symlinks in git — they point to a personal,
-# per-host collection. Recreate them here so stow has something to mirror out.
-# Must run BEFORE stow. Override the source via WALLPAPER_SRC=... ./apply.sh
+# per-host collection. Recreate the live ~/.config dir-symlinks from whatever the
+# matcher already curated into features/wallpapers/.config/omarchy/backgrounds/.
+# Curation itself (color matching) is a manual step: ./match_wallpapers.py
 if [ -n "${seen[wallpapers]:-}" ]; then
-    "$DOTFILES_DIR/link-omarchy-wallpapers.sh" || true
+    python3 "$DOTFILES_DIR/match_wallpapers.py" --relink || true
 fi
 
 # --- Install the selected packages ---------------------------------------------
