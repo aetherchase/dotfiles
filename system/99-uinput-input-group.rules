@@ -1,6 +1,7 @@
 # Let processes in the `input` group create virtual input devices via uinput.
-# Required by the scroll-debounce user service (no root daemon needed).
+# Required by the keybind-lookup panel (SUPER+K) which grabs the keyboards and
+# re-injects keystrokes through a uinput virtual device (no root daemon needed).
 # Security note: input-group users can already read input devices; this also
 # lets them synthesize input events (keystrokes/clicks). Acceptable on a
-# single-user desktop. Install: see system/install-scroll-debounce.sh
+# single-user desktop. Install: see system/install-uinput.sh
 KERNEL=="uinput", SUBSYSTEM=="misc", GROUP="input", MODE="0660", OPTIONS+="static_node=uinput"

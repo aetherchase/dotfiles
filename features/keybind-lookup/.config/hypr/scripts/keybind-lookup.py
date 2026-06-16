@@ -9,8 +9,8 @@ can ask "what does this chord do?" by just pressing it.
 Why this is non-trivial: walker holds keyboard focus while open and can't be
 re-filtered in place, and Hyprland fires SUPER chords as global binds (so a
 pressed chord would execute, not be observable). The only way to intercept a
-chord is to EVIOCGRAB the keyboard at the evdev layer (same mechanism as
-scroll-debounce's mouse grab). But grabbing also steals normal typing from
+chord is to EVIOCGRAB the keyboard at the evdev layer (an evdev grab, below
+Hyprland). But grabbing also steals normal typing from
 walker — so we re-inject unmodified keystrokes through a uinput virtual
 keyboard (typing/search keep working), while swallowing SUPER/CTRL/ALT chords
 and turning them into a filter. The virtual device only ever sees unmodified
