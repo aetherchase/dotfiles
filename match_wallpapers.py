@@ -4,6 +4,7 @@ affinity. See docs/superpowers/specs/2026-06-16-wallpaper-theme-matcher-design.m
 from __future__ import annotations
 
 import math
+import os
 import tomllib
 
 from PIL import Image
@@ -145,3 +146,20 @@ def score_image(dominants: list[tuple[tuple[int, int, int], float]],
         lab = srgb_to_lab(rgb)
         score += weight * min(ciede2000(lab, t) for t in theme_labs)
     return score
+
+
+def load_themes(stock_dir: str, user_dir: str
+                ) -> dict[str, list[tuple[float, float, float]]]:
+    """Map theme slug -> Lab palette, from stock then user dirs (user wins on clash)."""
+    themes: dict[str, list[tuple[float, float, float]]] = {}
+    for base in (stock_dir, user_dir):
+        if not os.path.isdir(base):
+            continue
+        for slug in sorted(os.listdir(base)):
+            toml_path = os.path.join(base, slug, "colors.toml")
+            if not os.path.isfile(toml_path):
+                continue
+            rgbs = parse_palette(toml_path)
+            if rgbs:
+                themes[slug] = [srgb_to_lab(c) for c in rgbs]
+    return themes

@@ -136,5 +136,25 @@ class TestScore(unittest.TestCase):
         self.assertAlmostEqual(s, 0.5 * blue_dist, places=3)
 
 
+class TestLoadThemes(unittest.TestCase):
+    def _theme(self, root, slug, accent="#7fbbb3"):
+        d = os.path.join(root, slug)
+        os.makedirs(d)
+        with open(os.path.join(d, "colors.toml"), "w") as f:
+            f.write(f'accent = "{accent}"\nbackground = "#2d353b"\ncolor1 = "#e67e80"\n')
+
+    def test_loads_stock_and_user(self):
+        with tempfile.TemporaryDirectory() as stock, tempfile.TemporaryDirectory() as user:
+            self._theme(stock, "everforest")
+            self._theme(user, "aether")
+            themes = mw.load_themes(stock, user)
+        self.assertEqual(set(themes), {"everforest", "aether"})
+        self.assertTrue(all(len(labs) == 3 for labs in themes.values()))
+
+    def test_missing_dirs_ok(self):
+        themes = mw.load_themes("/no/such/stock", "/no/such/user")
+        self.assertEqual(themes, {})
+
+
 if __name__ == "__main__":
     unittest.main()
