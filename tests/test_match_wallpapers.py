@@ -36,5 +36,22 @@ class TestLab(unittest.TestCase):
         self.assertAlmostEqual(b, 67.20, places=1)
 
 
+class TestCiede2000(unittest.TestCase):
+    def test_identity(self):
+        self.assertAlmostEqual(mw.ciede2000((50, 2.5, 0), (50, 2.5, 0)), 0.0, places=4)
+
+    def test_sharma_pair_1(self):
+        d = mw.ciede2000((50.0000, 2.6772, -79.7751), (50.0000, 0.0000, -82.7485))
+        self.assertAlmostEqual(d, 2.0425, places=4)
+
+    def test_sharma_pair_2(self):
+        d = mw.ciede2000((50.0000, 3.1571, -77.2803), (50.0000, 0.0000, -82.7485))
+        self.assertAlmostEqual(d, 2.8615, places=4)
+
+    def test_sharma_pair_3(self):
+        d = mw.ciede2000((50.0000, 2.8361, -74.0200), (50.0000, 0.0000, -82.7485))
+        self.assertAlmostEqual(d, 3.4412, places=4)
+
+
 if __name__ == "__main__":
     unittest.main()
