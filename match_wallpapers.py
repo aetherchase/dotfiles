@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import math
 import os
+import shutil
 import tomllib
 
 from PIL import Image
@@ -163,3 +164,30 @@ def load_themes(stock_dir: str, user_dir: str
             if rgbs:
                 themes[slug] = [srgb_to_lab(c) for c in rgbs]
     return themes
+
+
+def write_matches(repo_bg_dir: str, assignments: dict[str, list[str]]) -> None:
+    """Rebuild repo per-theme dirs: clear all existing theme dirs (keep .gitkeep),
+    then symlink each assigned wallpaper (absolute source path) into its theme dir."""
+    os.makedirs(repo_bg_dir, exist_ok=True)
+    for name in os.listdir(repo_bg_dir):
+        if name == ".gitkeep":
+            continue
+        path = os.path.join(repo_bg_dir, name)
+        if os.path.islink(path):
+            os.unlink(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
+        else:
+            os.unlink(path)
+    for slug, images in assignments.items():
+        if not images:
+            continue
+        theme_dir = os.path.join(repo_bg_dir, slug)
+        os.makedirs(theme_dir, exist_ok=True)
+        for img in images:
+            link = os.path.join(theme_dir, os.path.basename(img))
+            src = os.path.abspath(img)
+            if os.path.lexists(link):
+                os.unlink(link)
+            os.symlink(src, link)

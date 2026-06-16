@@ -156,5 +156,25 @@ class TestLoadThemes(unittest.TestCase):
         self.assertEqual(themes, {})
 
 
+class TestWriteMatches(unittest.TestCase):
+    def test_writes_symlinks_and_clears_old(self):
+        with tempfile.TemporaryDirectory() as src, tempfile.TemporaryDirectory() as repo_bg:
+            a = os.path.join(src, "a.jpg"); open(a, "w").close()
+            b = os.path.join(src, "b.jpg"); open(b, "w").close()
+            # pre-existing stale theme dir that must be cleared
+            os.makedirs(os.path.join(repo_bg, "stale"))
+            open(os.path.join(repo_bg, ".gitkeep"), "w").close()
+
+            mw.write_matches(repo_bg, {"everforest": [a, b], "nord": [a]})
+
+            ef = os.path.join(repo_bg, "everforest")
+            self.assertTrue(os.path.islink(os.path.join(ef, "a.jpg")))
+            self.assertEqual(os.readlink(os.path.join(ef, "a.jpg")), a)
+            self.assertEqual(sorted(os.listdir(ef)), ["a.jpg", "b.jpg"])
+            self.assertEqual(os.listdir(os.path.join(repo_bg, "nord")), ["a.jpg"])
+            self.assertFalse(os.path.exists(os.path.join(repo_bg, "stale")))
+            self.assertTrue(os.path.exists(os.path.join(repo_bg, ".gitkeep")))  # keeper survives
+
+
 if __name__ == "__main__":
     unittest.main()
