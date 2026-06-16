@@ -6,6 +6,8 @@ from __future__ import annotations
 import math
 import tomllib
 
+from PIL import Image
+
 # Hue-bearing palette keys; color0/7/8/15 (near black/white) are skipped.
 PALETTE_KEYS = (
     "background", "accent",
@@ -113,4 +115,21 @@ def parse_palette(colors_toml_path: str) -> list[tuple[int, int, int]]:
         val = data.get(key)
         if isinstance(val, str) and val.startswith("#") and len(val) >= 7:
             out.append(hex_to_rgb(val))
+    return out
+
+
+def dominant_colors(path: str, k: int = 5, resize: int = 256
+                    ) -> list[tuple[tuple[int, int, int], float]]:
+    """Top-k dominant colors as [(rgb, weight)], weight = pixel fraction, desc."""
+    img = Image.open(path).convert("RGB")
+    img.thumbnail((resize, resize))
+    q = img.quantize(colors=k, method=Image.Quantize.MEDIANCUT)
+    palette = q.getpalette()
+    counts = q.getcolors()  # [(count, index), ...]
+    total = sum(c for c, _ in counts) or 1
+    out = []
+    for count, idx in counts:
+        rgb = tuple(palette[idx * 3: idx * 3 + 3])
+        out.append((rgb, count / total))
+    out.sort(key=lambda t: -t[1])
     return out

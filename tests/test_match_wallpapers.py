@@ -3,6 +3,8 @@ import os
 import tempfile
 import unittest
 
+from PIL import Image
+
 import match_wallpapers as mw
 
 
@@ -87,6 +89,33 @@ class TestParsePalette(unittest.TestCase):
         self.assertIn((230, 126, 128), rgbs)   # color1
         self.assertNotIn((71, 82, 88), rgbs)   # color0 excluded
         self.assertEqual(len(rgbs), 8)
+
+
+class TestDominant(unittest.TestCase):
+    def _png(self, d, name, color, size=(64, 64)):
+        p = os.path.join(d, name)
+        Image.new("RGB", size, color).save(p)
+        return p
+
+    def test_solid_red(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = self._png(d, "red.png", (255, 0, 0))
+            doms = mw.dominant_colors(p, k=5)
+        self.assertEqual(len(doms), 1)            # only one color present
+        rgb, weight = doms[0]
+        self.assertEqual(rgb, (255, 0, 0))
+        self.assertAlmostEqual(weight, 1.0, places=3)
+
+    def test_weights_sum_to_one(self):
+        with tempfile.TemporaryDirectory() as d:
+            img = Image.new("RGB", (100, 100), (0, 0, 255))
+            for x in range(100):           # half blue, half green
+                for y in range(50):
+                    img.putpixel((x, y), (0, 255, 0))
+            p = os.path.join(d, "split.png")
+            img.save(p)
+            doms = mw.dominant_colors(p, k=5)
+        self.assertAlmostEqual(sum(w for _, w in doms), 1.0, places=3)
 
 
 if __name__ == "__main__":
