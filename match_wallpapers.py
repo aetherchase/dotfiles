@@ -133,3 +133,15 @@ def dominant_colors(path: str, k: int = 5, resize: int = 256
         out.append((rgb, count / total))
     out.sort(key=lambda t: -t[1])
     return out
+
+
+def score_image(dominants: list[tuple[tuple[int, int, int], float]],
+                theme_labs: list[tuple[float, float, float]]) -> float:
+    """Weighted mean of each dominant color's nearest-theme-color CIEDE2000."""
+    if not theme_labs:
+        return float("inf")
+    score = 0.0
+    for rgb, weight in dominants:
+        lab = srgb_to_lab(rgb)
+        score += weight * min(ciede2000(lab, t) for t in theme_labs)
+    return score

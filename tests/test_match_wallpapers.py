@@ -118,5 +118,23 @@ class TestDominant(unittest.TestCase):
         self.assertAlmostEqual(sum(w for _, w in doms), 1.0, places=3)
 
 
+class TestScore(unittest.TestCase):
+    def test_green_image_closer_to_green_theme(self):
+        green_doms = [((0, 200, 0), 1.0)]
+        green_theme = [mw.srgb_to_lab((10, 190, 10)), mw.srgb_to_lab((40, 40, 40))]
+        red_theme = [mw.srgb_to_lab((200, 10, 10)), mw.srgb_to_lab((40, 40, 40))]
+        s_green = mw.score_image(green_doms, green_theme)
+        s_red = mw.score_image(green_doms, red_theme)
+        self.assertLess(s_green, s_red)
+
+    def test_score_is_weighted_min_distance(self):
+        doms = [((0, 200, 0), 0.5), ((0, 0, 200), 0.5)]
+        theme = [mw.srgb_to_lab((0, 200, 0))]  # exactly matches the green dom
+        s = mw.score_image(doms, theme)
+        # green term contributes ~0, blue term contributes 0.5 * dist(blue,green)
+        blue_dist = mw.ciede2000(mw.srgb_to_lab((0, 0, 200)), theme[0])
+        self.assertAlmostEqual(s, 0.5 * blue_dist, places=3)
+
+
 if __name__ == "__main__":
     unittest.main()
