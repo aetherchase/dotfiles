@@ -43,7 +43,18 @@ for d in "$FEATURES_DIR"/*/; do
     [ -n "${seen[$pkg]:-}" ] && continue
     echo "Unstowing deselected feature: $pkg"
     stow -D --no-folding --dir="$FEATURES_DIR" --target="$HOME" "$pkg" 2>/dev/null || true
+    # wallpapers ships its symlinks straight into ~/.config (not via stow), so
+    # stow -D can't remove them — do it explicitly.
+    [ "$pkg" = wallpapers ] && "$DOTFILES_DIR/link-omarchy-wallpapers.sh" --unlink || true
 done
+
+# --- Regenerate machine-specific wallpaper symlinks (gitignored) ---------------
+# The `wallpapers` package ships NO symlinks in git — they point to a personal,
+# per-host collection. Recreate them here so stow has something to mirror out.
+# Must run BEFORE stow. Override the source via WALLPAPER_SRC=... ./apply.sh
+if [ -n "${seen[wallpapers]:-}" ]; then
+    "$DOTFILES_DIR/link-omarchy-wallpapers.sh" || true
+fi
 
 # --- Install the selected packages ---------------------------------------------
 # --no-folding: create real directories and symlink individual files, instead of
