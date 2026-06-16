@@ -3,9 +3,11 @@
 affinity. See docs/superpowers/specs/2026-06-16-wallpaper-theme-matcher-design.md."""
 from __future__ import annotations
 
+import argparse
 import math
 import os
 import shutil
+import sys
 import tomllib
 
 from PIL import Image
@@ -240,3 +242,98 @@ def unlink(repo_bg_dir: str, config_bg_dir: str) -> int:
             os.unlink(link)
             n += 1
     return n
+
+
+IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".webp")
+DEFAULT_STOCK = os.path.expanduser("~/.local/share/omarchy/themes")
+DEFAULT_USER = os.path.expanduser("~/.config/omarchy/themes")
+DEFAULT_SOURCE = os.path.expanduser("~/Wallpapers")
+REPO_BG = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                       "features/wallpapers/.config/omarchy/backgrounds")
+CONFIG_BG = os.path.expanduser("~/.config/omarchy/backgrounds")
+
+
+def _list_images(source: str) -> list[str]:
+    return [os.path.join(source, f) for f in sorted(os.listdir(source))
+            if f.lower().endswith(IMAGE_EXTS)]
+
+
+def curate(source, stock_dir, user_dir, repo_bg_dir, config_bg_dir,
+           min_ratio=1.0, threshold=18.0, k=5, assume_yes=False) -> dict[str, list[str]]:
+    if not os.path.isdir(source):
+        print(f"ERROR: source folder not found: {source}", file=sys.stderr)
+        sys.exit(1)
+    themes = load_themes(stock_dir, user_dir)
+    if not themes:
+        print("ERROR: no theme palettes found", file=sys.stderr)
+        sys.exit(1)
+
+    assignments: dict[str, list[str]] = {slug: [] for slug in themes}
+    dropped = filtered = 0
+    for img in _list_images(source):
+        try:
+            with Image.open(img) as im:
+                w, h = im.size
+            if not passes_ratio(w, h, min_ratio):
+                filtered += 1
+                continue
+            doms = dominant_colors(img, k=k)
+        except Exception as e:  # unreadable / truncated image
+            print(f"WARN: skipping {img}: {e}", file=sys.stderr)
+            continue
+        matched = False
+        for slug, labs in themes.items():
+            if score_image(doms, labs) <= threshold:
+                assignments[slug].append(img)
+                matched = True
+        if not matched:
+            dropped += 1
+
+    print(f"\nFiltered (ratio < {min_ratio}): {filtered}")
+    print(f"Dropped (no theme <= {threshold}): {dropped}\n")
+    for slug in sorted(assignments):
+        print(f"  {slug:<18} {len(assignments[slug])}")
+    if not assume_yes:
+        if input("\nWrite these symlinks? [y/N] ").strip().lower() != "y":
+            print("Aborted.")
+            return assignments
+
+    write_matches(repo_bg_dir, assignments)
+    n = relink(repo_bg_dir, config_bg_dir)
+    print(f"Done: {n} theme(s) linked into {config_bg_dir}")
+    return assignments
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description="Match wallpapers to omarchy themes by color.")
+    ap.add_argument("--relink", action="store_true", help="recreate ~/.config dir-symlinks only")
+    ap.add_argument("--unlink", action="store_true", help="remove ~/.config dir-symlinks")
+    ap.add_argument("--source", help="wallpaper folder (default ~/Wallpapers or prompt)")
+    ap.add_argument("--min-ratio", type=float, default=1.0)
+    ap.add_argument("--threshold", type=float, default=18.0)
+    ap.add_argument("--colors", type=int, default=5)
+    ap.add_argument("--yes", action="store_true", help="skip the dry-run confirmation")
+    args = ap.parse_args(argv)
+
+    if args.relink:
+        n = relink(REPO_BG, CONFIG_BG)
+        print(f"Relinked {n} theme(s).")
+        return 0
+    if args.unlink:
+        n = unlink(REPO_BG, CONFIG_BG)
+        print(f"Unlinked {n} theme(s).")
+        return 0
+
+    source = args.source
+    if not source:
+        entered = input(f"Wallpaper folder [{DEFAULT_SOURCE}]: ").strip()
+        source = os.path.expanduser(entered) if entered else DEFAULT_SOURCE
+    curate(source=source, stock_dir=DEFAULT_STOCK, user_dir=DEFAULT_USER,
+           repo_bg_dir=REPO_BG, config_bg_dir=CONFIG_BG,
+           min_ratio=args.min_ratio, threshold=args.threshold,
+           k=args.colors, assume_yes=args.yes)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

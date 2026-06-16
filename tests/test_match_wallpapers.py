@@ -205,5 +205,36 @@ class TestRelink(unittest.TestCase):
             self.assertTrue(os.path.isdir(os.path.join(cfg, "realdir")))
 
 
+class TestCurate(unittest.TestCase):
+    def _theme(self, root, slug, *hexes):
+        d = os.path.join(root, slug); os.makedirs(d)
+        body = "".join(f'color{i+1} = "{h}"\n' for i, h in enumerate(hexes))
+        with open(os.path.join(d, "colors.toml"), "w") as f:
+            f.write('background = "#202020"\n' + body)
+
+    def test_end_to_end_assigns_by_color(self):
+        with tempfile.TemporaryDirectory() as src, \
+             tempfile.TemporaryDirectory() as stock, \
+             tempfile.TemporaryDirectory() as repo_bg, \
+             tempfile.TemporaryDirectory() as cfg:
+            Image.new("RGB", (160, 90), (0, 200, 0)).save(os.path.join(src, "green.png"))
+            Image.new("RGB", (160, 90), (200, 0, 0)).save(os.path.join(src, "red.png"))
+            Image.new("RGB", (90, 160), (0, 200, 0)).save(os.path.join(src, "tall.png"))  # portrait -> dropped
+            self._theme(stock, "forest", "#10c010", "#1faa1f")
+            self._theme(stock, "ember", "#c01010", "#aa1f1f")
+
+            mw.curate(source=src, stock_dir=stock, user_dir=os.path.join(stock, "none"),
+                      repo_bg_dir=repo_bg, config_bg_dir=cfg,
+                      min_ratio=1.0, threshold=18.0, k=5, assume_yes=True)
+
+            forest = os.listdir(os.path.join(repo_bg, "forest"))
+            ember = os.listdir(os.path.join(repo_bg, "ember"))
+            self.assertIn("green.png", forest)
+            self.assertNotIn("red.png", forest)
+            self.assertIn("red.png", ember)
+            self.assertNotIn("tall.png", forest + ember)        # portrait filtered
+            self.assertTrue(os.path.islink(os.path.join(cfg, "forest")))  # relinked
+
+
 if __name__ == "__main__":
     unittest.main()
