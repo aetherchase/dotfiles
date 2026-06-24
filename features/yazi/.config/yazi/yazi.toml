@@ -2,5 +2,14 @@
 # prepend_rules wins over yazi's built-in text/* -> edit rule.
 [open]
 prepend_rules = [
+	# SVG -> VS Code. Must precede the */* catch-all (rules match in order).
+	{ url = "*.svg", use = "code" },
+	{ mime = "image/svg+xml", use = "code" },
 	{ mime = "*/*", use = "open" },
+]
+
+[opener]
+code = [
+	{ run = 'code "$@"', orphan = true, desc = "code" },
+	{ run = 'google-chrome-stable "$@"', orphan = true, desc = "browser" },
 ]
