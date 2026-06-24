@@ -141,7 +141,10 @@ def dominant_colors(path: str, k: int = 5, resize: int = 256
 
 def score_image(dominants: list[tuple[tuple[int, int, int], float]],
                 theme_labs: list[tuple[float, float, float]]) -> float:
-    """Weighted mean of each dominant color's nearest-theme-color CIEDE2000."""
+    """Weighted mean of each dominant color's nearest-theme-color CIEDE2000.
+
+    Lenient (averages a bad color away); kept as a building block. The curator
+    uses score_image_strict instead — see that function."""
     if not theme_labs:
         return float("inf")
     score = 0.0
@@ -149,6 +152,82 @@ def score_image(dominants: list[tuple[tuple[int, int, int], float]],
         lab = srgb_to_lab(rgb)
         score += weight * min(ciede2000(lab, t) for t in theme_labs)
     return score
+
+
+def lab_chroma(lab: tuple[float, float, float]) -> float:
+    """Colorfulness of a Lab color (0 = neutral gray)."""
+    return math.hypot(lab[1], lab[2])
+
+
+def lab_hue(lab: tuple[float, float, float]) -> float:
+    """Hue angle of a Lab color in degrees [0, 360)."""
+    return math.degrees(math.atan2(lab[2], lab[1])) % 360.0
+
+
+def hue_sectors(dominants: list[tuple[tuple[int, int, int], float]],
+                chroma_floor: float = 12.0, min_weight: float = 0.06,
+                sector_deg: float = 30.0) -> int:
+    """Count distinct hue sectors carrying significant *chromatic* weight.
+
+    Near-neutral dominants (chroma < chroma_floor) are ignored — they carry no
+    hue. A sector counts only if its accumulated weight >= min_weight."""
+    acc: dict[int, float] = {}
+    for rgb, weight in dominants:
+        lab = srgb_to_lab(rgb)
+        if lab_chroma(lab) >= chroma_floor:
+            sector = int(lab_hue(lab) // sector_deg)
+            acc[sector] = acc.get(sector, 0.0) + weight
+    return sum(1 for w in acc.values() if w >= min_weight)
+
+
+def is_polychrome(dominants: list[tuple[tuple[int, int, int], float]],
+                  max_hues: int = 4, chroma_floor: float = 12.0,
+                  min_weight: float = 0.06, sector_deg: float = 30.0) -> bool:
+    """True if the image spreads across more than max_hues distinct hue sectors.
+
+    Such an image (rainbow, neon signage) contains a near match for almost any
+    palette, so it belongs to no single theme — reject it outright."""
+    return hue_sectors(dominants, chroma_floor, min_weight, sector_deg) > max_hues
+
+
+def score_image_strict(dominants: list[tuple[tuple[int, int, int], float]],
+                       theme_labs: list[tuple[float, float, float]],
+                       top_n: int = 3) -> float:
+    """Worst nearest-theme CIEDE2000 among the image's top_n most prominent
+    colors. The theme must *cover* every prominent color closely — a single
+    uncovered dominant color sinks the score (unlike the lenient mean)."""
+    if not theme_labs:
+        return float("inf")
+    top = sorted(dominants, key=lambda t: -t[1])[:top_n]
+    return max(min(ciede2000(srgb_to_lab(rgb), t) for t in theme_labs)
+               for rgb, _ in top)
+
+
+def image_mean_chroma(dominants: list[tuple[tuple[int, int, int], float]]) -> float:
+    """Weight-averaged colorfulness of an image's dominant colors."""
+    total = sum(weight for _, weight in dominants)
+    if total <= 0:
+        return 0.0
+    return sum(weight * lab_chroma(srgb_to_lab(rgb))
+               for rgb, weight in dominants) / total
+
+
+def image_is_neutral(dominants: list[tuple[tuple[int, int, int], float]],
+                     chroma_floor: float = 12.0) -> bool:
+    """True if the image is essentially grayscale (mean chroma below the floor).
+
+    Grays carry no hue, so CIEDE2000 between them is driven by lightness alone —
+    chromatic theme matching is meaningless for such images, so they are routed
+    to grayscale themes by neutrality instead of color distance."""
+    return image_mean_chroma(dominants) < chroma_floor
+
+
+def theme_is_neutral(theme_labs: list[tuple[float, float, float]],
+                     chroma_floor: float = 12.0) -> bool:
+    """True if every palette color is near-neutral (a grayscale theme).
+
+    Empty palette is not neutral — there is nothing to match."""
+    return bool(theme_labs) and all(lab_chroma(lab) < chroma_floor for lab in theme_labs)
 
 
 def load_themes(stock_dir: str, user_dir: str
@@ -259,7 +338,8 @@ def _list_images(source: str) -> list[str]:
 
 
 def curate(source, stock_dir, user_dir, repo_bg_dir, config_bg_dir,
-           min_ratio=1.0, threshold=18.0, k=5, assume_yes=False) -> dict[str, list[str]]:
+           min_ratio=1.0, threshold=12.0, k=8, assume_yes=False,
+           max_hues=4, top_colors=3) -> dict[str, list[str]]:
     if not os.path.isdir(source):
         print(f"ERROR: source folder not found: {source}", file=sys.stderr)
         sys.exit(1)
@@ -269,7 +349,7 @@ def curate(source, stock_dir, user_dir, repo_bg_dir, config_bg_dir,
         sys.exit(1)
 
     assignments: dict[str, list[str]] = {slug: [] for slug in themes}
-    dropped = filtered = 0
+    dropped = filtered = polychrome = 0
     for img in _list_images(source):
         try:
             with Image.open(img) as im:
@@ -281,15 +361,28 @@ def curate(source, stock_dir, user_dir, repo_bg_dir, config_bg_dir,
         except Exception as e:  # unreadable / truncated image
             print(f"WARN: skipping {img}: {e}", file=sys.stderr)
             continue
+        # Reject "matches everything" images (rainbow, neon) before scoring.
+        if is_polychrome(doms, max_hues=max_hues):
+            polychrome += 1
+            continue
+        img_neutral = image_is_neutral(doms)
         matched = False
         for slug, labs in themes.items():
-            if score_image(doms, labs) <= threshold:
+            # Grayscale images go only to grayscale themes (and vice versa);
+            # color distance between two near-grays is meaningless lightness noise.
+            if theme_is_neutral(labs) != img_neutral:
+                continue
+            if img_neutral:
+                assignments[slug].append(img)
+                matched = True
+            elif score_image_strict(doms, labs, top_n=top_colors) <= threshold:
                 assignments[slug].append(img)
                 matched = True
         if not matched:
             dropped += 1
 
     print(f"\nFiltered (ratio < {min_ratio}): {filtered}")
+    print(f"Polychrome (>{max_hues} hue sectors): {polychrome}")
     print(f"Dropped (no theme <= {threshold}): {dropped}\n")
     for slug in sorted(assignments):
         print(f"  {slug:<18} {len(assignments[slug])}")
@@ -310,8 +403,13 @@ def main(argv=None) -> int:
     ap.add_argument("--unlink", action="store_true", help="remove ~/.config dir-symlinks")
     ap.add_argument("--source", help="wallpaper folder (default ~/Wallpapers or prompt)")
     ap.add_argument("--min-ratio", type=float, default=1.0)
-    ap.add_argument("--threshold", type=float, default=18.0)
-    ap.add_argument("--colors", type=int, default=5)
+    ap.add_argument("--threshold", type=float, default=12.0,
+                    help="max CIEDE2000 a theme may be from any top color (lower = stricter)")
+    ap.add_argument("--colors", type=int, default=8, help="dominant colors to extract per image")
+    ap.add_argument("--top-colors", type=int, default=3,
+                    help="how many of the most prominent colors the theme must cover")
+    ap.add_argument("--max-hues", type=int, default=4,
+                    help="reject images spread across more than this many hue sectors")
     ap.add_argument("--yes", action="store_true", help="skip the dry-run confirmation")
     args = ap.parse_args(argv)
 
@@ -331,7 +429,8 @@ def main(argv=None) -> int:
     curate(source=source, stock_dir=DEFAULT_STOCK, user_dir=DEFAULT_USER,
            repo_bg_dir=REPO_BG, config_bg_dir=CONFIG_BG,
            min_ratio=args.min_ratio, threshold=args.threshold,
-           k=args.colors, assume_yes=args.yes)
+           k=args.colors, assume_yes=args.yes,
+           max_hues=args.max_hues, top_colors=args.top_colors)
     return 0
 
 

@@ -205,6 +205,99 @@ class TestRelink(unittest.TestCase):
             self.assertTrue(os.path.isdir(os.path.join(cfg, "realdir")))
 
 
+class TestChromaHue(unittest.TestCase):
+    def test_neutral_has_low_chroma(self):
+        self.assertLess(mw.lab_chroma(mw.srgb_to_lab((128, 128, 128))), 2.0)
+
+    def test_saturated_has_high_chroma(self):
+        self.assertGreater(mw.lab_chroma(mw.srgb_to_lab((255, 0, 0))), 50.0)
+
+    def test_hue_in_range(self):
+        h = mw.lab_hue(mw.srgb_to_lab((255, 0, 0)))
+        self.assertTrue(0.0 <= h < 360.0)
+
+
+class TestPolychrome(unittest.TestCase):
+    def test_rainbow_is_polychrome(self):
+        doms = [((255, 0, 0), 0.17), ((255, 255, 0), 0.17), ((0, 255, 0), 0.17),
+                ((0, 255, 255), 0.17), ((0, 0, 255), 0.16), ((255, 0, 255), 0.16)]
+        self.assertTrue(mw.is_polychrome(doms))
+
+    def test_focused_hue_not_polychrome(self):
+        doms = [((10, 120, 10), 0.6), ((20, 140, 30), 0.4)]  # greens only
+        self.assertFalse(mw.is_polychrome(doms))
+
+    def test_neutral_not_polychrome(self):
+        # near-grayscale: no chromatic sectors -> not flagged by this lever
+        doms = [((20, 20, 20), 0.5), ((200, 200, 200), 0.5)]
+        self.assertFalse(mw.is_polychrome(doms))
+
+
+class TestStrictScore(unittest.TestCase):
+    def test_worst_of_top_n(self):
+        doms = [((0, 200, 0), 0.6), ((200, 0, 0), 0.4)]
+        only_green = [mw.srgb_to_lab((0, 200, 0))]
+        both = [mw.srgb_to_lab((0, 200, 0)), mw.srgb_to_lab((200, 0, 0))]
+        s_green = mw.score_image_strict(doms, only_green, top_n=2)
+        s_both = mw.score_image_strict(doms, both, top_n=2)
+        red_to_green = mw.ciede2000(mw.srgb_to_lab((200, 0, 0)), only_green[0])
+        # worst prominent color (red) governs the score against a green-only theme
+        self.assertAlmostEqual(s_green, red_to_green, places=3)
+        self.assertLess(s_both, 1.0)   # both prominent colors covered
+
+    def test_tail_color_beyond_top_n_ignored(self):
+        doms = [((0, 200, 0), 0.5), ((0, 190, 0), 0.45), ((200, 0, 0), 0.05)]
+        only_green = [mw.srgb_to_lab((0, 200, 0))]
+        s = mw.score_image_strict(doms, only_green, top_n=2)
+        self.assertLess(s, 5.0)   # tiny-weight red excluded from top-2
+
+    def test_empty_theme_is_inf(self):
+        self.assertEqual(mw.score_image_strict([((0, 0, 0), 1.0)], [], top_n=3),
+                         float("inf"))
+
+
+class TestNeutralGate(unittest.TestCase):
+    def test_image_mean_chroma(self):
+        self.assertLess(mw.image_mean_chroma([((100, 100, 100), 1.0)]), 2.0)
+        self.assertGreater(mw.image_mean_chroma([((255, 0, 0), 1.0)]), 50.0)
+
+    def test_image_is_neutral(self):
+        self.assertTrue(mw.image_is_neutral([((30, 30, 30), 0.5), ((200, 200, 200), 0.5)]))
+        self.assertFalse(mw.image_is_neutral([((0, 200, 0), 1.0)]))
+
+    def test_theme_is_neutral(self):
+        gray_theme = [mw.srgb_to_lab((20, 20, 20)), mw.srgb_to_lab((200, 200, 200))]
+        color_theme = [mw.srgb_to_lab((20, 20, 20)), mw.srgb_to_lab((0, 180, 0))]
+        self.assertTrue(mw.theme_is_neutral(gray_theme))
+        self.assertFalse(mw.theme_is_neutral(color_theme))
+
+    def test_empty_theme_not_neutral(self):
+        self.assertFalse(mw.theme_is_neutral([]))
+
+
+class TestNeutralCurate(unittest.TestCase):
+    def test_neutral_image_only_matches_neutral_theme(self):
+        with tempfile.TemporaryDirectory() as src, \
+             tempfile.TemporaryDirectory() as stock, \
+             tempfile.TemporaryDirectory() as repo_bg, \
+             tempfile.TemporaryDirectory() as cfg:
+            Image.new("RGB", (160, 90), (128, 128, 128)).save(os.path.join(src, "gray.png"))
+            # mono theme: grayscale palette only
+            d = os.path.join(stock, "mono"); os.makedirs(d)
+            with open(os.path.join(d, "colors.toml"), "w") as f:
+                f.write('background = "#202020"\ncolor1 = "#c8c8c8"\n')
+            # forest theme: chromatic palette
+            d = os.path.join(stock, "forest"); os.makedirs(d)
+            with open(os.path.join(d, "colors.toml"), "w") as f:
+                f.write('background = "#202020"\ncolor1 = "#10c010"\n')
+
+            mw.curate(source=src, stock_dir=stock, user_dir=os.path.join(stock, "none"),
+                      repo_bg_dir=repo_bg, config_bg_dir=cfg, assume_yes=True)
+
+            self.assertIn("gray.png", os.listdir(os.path.join(repo_bg, "mono")))
+            self.assertFalse(os.path.isdir(os.path.join(repo_bg, "forest")))  # gated out
+
+
 class TestCurate(unittest.TestCase):
     def _theme(self, root, slug, *hexes):
         d = os.path.join(root, slug); os.makedirs(d)
