@@ -31,3 +31,7 @@ mv ~/.config/<app>/config ~/dotfiles/.config/<app>/
 cd ~/dotfiles && stow --target=$HOME .
 git add . && git commit -m "add <app> config"
 ```
+
+## Wallpapers
+
+- Wallpaper fixture labeler: open `tools/fixtures-labeler/index.html`, label do/dont per theme, drop the downloaded `<theme>.json` into `tests/fixtures/labels/`. `python -m unittest` then grades the matcher against it.
