@@ -1,0 +1,10 @@
+body { font-family: sans-serif; margin: 1.5rem; background: #1c1c1c; color: #ddd; }
+.bar { margin: .5rem 0; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+input[type=number] { width: 5rem; }
+.sw { display: inline-block; width: 26px; height: 26px; border-radius: 4px; margin: 2px;
+      border: 1px solid #0006; }
+.bg, .thumb { height: 70px; border-radius: 4px; vertical-align: middle; }
+#drop { border: 2px dashed #666; padding: 1rem; border-radius: 6px; margin: .5rem 0; }
+.row { display: flex; gap: .6rem; align-items: center; margin: .3rem 0; }
+.nm { min-width: 16rem; font-size: 13px; word-break: break-all; }
+button { padding: .4rem .8rem; border-radius: 6px; cursor: pointer; }

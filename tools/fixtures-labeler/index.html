@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wallpaper fixture labeler</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Wallpaper fixture labeler</h1>
+  <div class="bar">
+    <label>Theme <select id="theme"></select></label>
+    <label>Source dir <input id="source_dir" value="~/Wallpapers" size="30"></label>
+  </div>
+  <div class="bar">
+    <label>threshold <input id="threshold" type="number" step="0.5" value="12"></label>
+    <label>top_colors <input id="top_colors" type="number" value="3"></label>
+    <label>k <input id="k" type="number" value="8"></label>
+    <label>max_hues <input id="max_hues" type="number" value="4"></label>
+  </div>
+  <h3>Palette hint</h3><div id="palette"></div>
+  <h3>Existing omarchy backgrounds</h3><div id="bgs"></div>
+  <h3>Candidates</h3>
+  <div id="drop">Drop wallpapers here, or <input id="files" type="file" accept="image/*" multiple></div>
+  <div id="rows"></div>
+  <div class="bar">
+    <button id="export">Download &lt;theme&gt;.json</button>
+    <label>Import existing <input id="import" type="file" accept="application/json"></label>
+  </div>
+  <script src="themes.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
