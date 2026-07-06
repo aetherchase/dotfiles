@@ -230,6 +230,25 @@ def theme_is_neutral(theme_labs: list[tuple[float, float, float]],
     return bool(theme_labs) and all(lab_chroma(lab) < chroma_floor for lab in theme_labs)
 
 
+def theme_matches_image(dominants: list[tuple[tuple[int, int, int], float]],
+                        theme_labs: list[tuple[float, float, float]], *,
+                        threshold: float, top_colors: int, max_hues: int) -> bool:
+    """Would the curator assign this image to this theme? The single source of the
+    per-(image, theme) decision, shared by curate() and the labeled-fixture eval.
+
+    Order mirrors curate(): reject polychrome images outright; route by neutrality
+    (grayscale image <-> grayscale theme only); otherwise the theme must cover the
+    image's prominent colors within `threshold` (strict worst-color score)."""
+    if is_polychrome(dominants, max_hues=max_hues):
+        return False
+    img_neutral = image_is_neutral(dominants)
+    if theme_is_neutral(theme_labs) != img_neutral:
+        return False
+    if img_neutral:
+        return True
+    return score_image_strict(dominants, theme_labs, top_n=top_colors) <= threshold
+
+
 def load_themes(stock_dir: str, user_dir: str
                 ) -> dict[str, list[tuple[float, float, float]]]:
     """Map theme slug -> Lab palette, from stock then user dirs (user wins on clash)."""
@@ -365,17 +384,10 @@ def curate(source, stock_dir, user_dir, repo_bg_dir, config_bg_dir,
         if is_polychrome(doms, max_hues=max_hues):
             polychrome += 1
             continue
-        img_neutral = image_is_neutral(doms)
         matched = False
         for slug, labs in themes.items():
-            # Grayscale images go only to grayscale themes (and vice versa);
-            # color distance between two near-grays is meaningless lightness noise.
-            if theme_is_neutral(labs) != img_neutral:
-                continue
-            if img_neutral:
-                assignments[slug].append(img)
-                matched = True
-            elif score_image_strict(doms, labs, top_n=top_colors) <= threshold:
+            if theme_matches_image(doms, labs, threshold=threshold,
+                                   top_colors=top_colors, max_hues=max_hues):
                 assignments[slug].append(img)
                 matched = True
         if not matched:

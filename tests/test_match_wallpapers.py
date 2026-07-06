@@ -329,5 +329,34 @@ class TestCurate(unittest.TestCase):
             self.assertTrue(os.path.islink(os.path.join(cfg, "forest")))  # relinked
 
 
+class TestThemeMatches(unittest.TestCase):
+    GREEN = [((0, 160, 0), 1.0)]
+    RED = [((190, 0, 0), 1.0)]
+    GRAY = [((128, 128, 128), 1.0)]
+    RAINBOW = [((255, 0, 0), 0.17), ((255, 255, 0), 0.17), ((0, 255, 0), 0.17),
+               ((0, 255, 255), 0.17), ((0, 0, 255), 0.16), ((255, 0, 255), 0.16)]
+    green_theme = [mw.srgb_to_lab((10, 150, 10)), mw.srgb_to_lab((40, 50, 40))]
+    gray_theme = [mw.srgb_to_lab((30, 30, 30)), mw.srgb_to_lab((200, 200, 200))]
+    KW = dict(threshold=18.0, top_colors=3, max_hues=4)
+
+    def test_matching_hue_assigned(self):
+        self.assertTrue(mw.theme_matches_image(self.GREEN, self.green_theme, **self.KW))
+
+    def test_wrong_hue_rejected(self):
+        self.assertFalse(mw.theme_matches_image(self.RED, self.green_theme, **self.KW))
+
+    def test_polychrome_rejected(self):
+        self.assertFalse(mw.theme_matches_image(self.RAINBOW, self.green_theme, **self.KW))
+
+    def test_neutral_image_rejected_by_chromatic_theme(self):
+        self.assertFalse(mw.theme_matches_image(self.GRAY, self.green_theme, **self.KW))
+
+    def test_neutral_image_assigned_to_neutral_theme(self):
+        self.assertTrue(mw.theme_matches_image(self.GRAY, self.gray_theme, **self.KW))
+
+    def test_chromatic_image_rejected_by_neutral_theme(self):
+        self.assertFalse(mw.theme_matches_image(self.GREEN, self.gray_theme, **self.KW))
+
+
 if __name__ == "__main__":
     unittest.main()
