@@ -33,6 +33,7 @@ features/
   .stow-local-ignore           # only ignores itself; nothing else is under the stow dir
   core/                        # ALWAYS installed: shared/base + machine-specific config
     .config/alacritty/alacritty.toml   # imports Omarchy base, overrides opacity
+    .config/chrome-flags.conf          # Chrome launch flags (wayland/ozone + middle-click autoscroll)
     .config/kitty/kitty.conf
     .config/gtk-3.0/settings.ini
     .config/omarchy/hooks/theme-set
@@ -107,6 +108,7 @@ Files in this repo — owned by dotfiles, Omarchy updates ignored. Paths below a
 | `swayosd/style.css` | swayosd-glass | frosted-glass OSD toast (translucent bg + hairline + 12px radius, matches waybar pills); **only style.css symlinked**, `config.toml` left as Omarchy's. NO CSS hot-reload — reload after edit: `omarchy restart swayosd`. Corners anti-alias only with the cairo renderer drop-in below. |
 | `.config/systemd/user/swayosd-server.service.d/override.conf` | swayosd-glass | drop-in forcing `GSK_RENDERER=cairo` — GTK4's GL renderer aliases the OSD pill's rounded corners (jagged "ladder" over high-contrast bg + fractional scale); cairo fixes it. Drop-in **dir must be a real dir** (systemd ignores symlinked `.d` dirs) — that's why `apply.sh` uses `stow --no-folding`. |
 | `alacritty/alacritty.toml` | core | imports Omarchy base, adds opacity override |
+| `chrome-flags.conf` | core | Google Chrome launch flags (Wayland/ozone, gnome-keyring, IME). Read by the `/usr/bin/google-chrome-stable` wrapper (`grep -v '^#' $XDG_CONFIG_HOME/chrome-flags.conf`) on **every** launch — both the Hyprland autostart (`rules.conf`) and `.desktop` launches. Started as an Omarchy default; now dotfiles-owned. Includes `--enable-blink-features=MiddleClickAutoscroll` (Windows-style middle-click-hold autoscroll) — MUST be `--enable-blink-features`, not `--enable-features` (different namespace, silently no-ops). Chrome reads flags only at startup → full quit + relaunch to apply. |
 | `walker/config.toml` | walker-theme | launcher config: points theme at custom `omarchy-custom` |
 | `walker/themes/omarchy-custom/` | walker-theme | custom Walker theme: `style.css` @imports stock omarchy-default + frosted-glass overrides; `layout.xml` is a copy (won't track upstream layout changes) |
 | `hypr/scripts/keybind-lookup.py` | keybind-lookup | SUPER+K hotkeys panel + live chord reverse-lookup |
