@@ -1,0 +1,93 @@
+{
+  "theme": "gruvbox",
+  "source_dir": "~/Wallpapers",
+  "palette": [
+    "#282828",
+    "#7daea3",
+    "#ea6962",
+    "#a9b665",
+    "#d8a657",
+    "#7daea3",
+    "#d3869b",
+    "#89b482",
+    "#ea6962",
+    "#a9b665",
+    "#d8a657",
+    "#7daea3",
+    "#d3869b",
+    "#89b482"
+  ],
+  "params": {
+    "threshold": 12,
+    "top_colors": 3,
+    "k": 8,
+    "max_hues": 4
+  },
+  "items": [
+    {
+      "name": "wallhaven-ex59dr.jpg",
+      "label": "do",
+      "reason": null
+    },
+    {
+      "name": "wallhaven-rqjrzq.jpg",
+      "label": "dont",
+      "reason": "wrong-hue"
+    },
+    {
+      "name": "wallhaven-q6e3jd.png",
+      "label": "do",
+      "reason": null
+    },
+    {
+      "name": "wallhaven-g7l393.jpg",
+      "label": "dont",
+      "reason": "wrong-hue"
+    },
+    {
+      "name": "wallhaven-x8jj9o.png",
+      "label": "do",
+      "reason": null
+    },
+    {
+      "name": "wallhaven-d682mj.jpg",
+      "label": "do",
+      "reason": null
+    },
+    {
+      "name": "wallhaven-zyj8gw (1).jpg",
+      "label": "dont",
+      "reason": "wrong-hue"
+    },
+    {
+      "name": "wallhaven-e7kpl8.png",
+      "label": "dont",
+      "reason": "wrong-hue"
+    },
+    {
+      "name": "wallhaven-4xk2zd.jpg",
+      "label": "dont",
+      "reason": "polychrome"
+    },
+    {
+      "name": "wallhaven-g7x6el.png",
+      "label": "dont",
+      "reason": "wrong-hue"
+    },
+    {
+      "name": "wallhaven-rr8wzj.jpg",
+      "label": "dont",
+      "reason": "wrong-hue"
+    },
+    {
+      "name": "wallhaven-eojxkk.jpg",
+      "label": "dont",
+      "reason": "wrong-hue"
+    },
+    {
+      "name": "wallhaven-pk5r5j.png",
+      "label": "dont",
+      "reason": "wrong-hue"
+    }
+  ]
+}

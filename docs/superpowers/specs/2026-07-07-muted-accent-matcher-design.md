@@ -1,187 +1,196 @@
-# Muted-image matcher: color-cast + salient-accent paths
+# Muted-image + hue-family matcher paths (color-cast, salient-accent, hue-family)
 
 **Date:** 2026-07-07
 **Branch:** `feat/wallpaper-theme-matcher`
 **Depends on:** `match_wallpapers.py`, specs `2026-06-16-wallpaper-theme-matcher-design.md`,
 `2026-07-06-everforest-fixture-tests-design.md`
+**Validated against:** `everforest.json` (19 imgs) + `gruvbox.json` (13 imgs)
 
 ## Problem
 
-The labeled-fixture eval on `everforest.json` is red: 14/19 = 74%. All 5 errors are the same
-shape — `do → rejected` (matcher too strict); **zero** false positives (`dont → assigned`).
-All 5 die at the **neutral gate** (`theme_is_neutral(labs) != image_is_neutral(doms)`): their
-dominant-weighted mean chroma is below `chroma_floor = 12`, so the matcher treats them as
-"near-gray" and routes them away from the chromatic everforest palette.
+The labeled-fixture eval is red on both themes against the current matcher:
 
-Parameter sweeps do **not** fix it — the current strict defaults (chroma_floor 12, threshold
-12, max_hues 4) are the *only* FP-free operating point; any loosening removes 1–2 FN but admits
-≥2 FP. The problem is **structural**, not parametric.
+- **everforest 14/19 = 74 %** — 5 `do → rejected`, 0 FP. All 5 die at the **neutral gate**
+  (`image_is_neutral` true because dominant-weighted mean chroma < 12) → routed away from the
+  chromatic palette.
+- **gruvbox 10/13 = 77 %** — 3 `do → rejected`, 0 FP. All 3 are *chromatic* images killed by the
+  **strict score** (`score_image_strict` worst-of-top-3 CIEDE = 21–27 > threshold 12).
 
-### Root cause
+Parameter sweeps do not fix either without new false positives — the failures are **structural**.
 
-Dominant colors come from median-cut, which is **area-weighted**. That blinds the matcher to
-two things a human weights heavily:
+### Root cause (one cause, two surfaces)
 
-1. **Faint but coherent color casts.** Misty / low-light forest photos carry a real green/teal
-   tint at chroma 5–15. CIEDE2000 to the palette is dominated by the *saturation gap* (image
-   chroma 5–15 vs palette chroma 21–44), so `score_image_strict` lands at 14–21 (> threshold)
-   even though the **hue** matches. The image also trips the neutral gate.
-2. **Tiny but salient accents.** `wallhaven-48qo7o.jpg` is a green comet on a black starfield —
-   the coma/tail is unmistakably everforest green/teal to a human, but it is **< 0.1 %** of the
-   pixels (5085 px, max chroma 35, at full 3420×2564 res). Area-weighted dominants — and any
-   thumbnail scan below ~1000 px — erase it entirely (measured mean chroma 0.9).
+The human matches on **hue family**; CIEDE2000's lightness and chroma terms over-penalize when the
+image's *tone/saturation* differs from the palette's, even at matching hue. Median-cut dominants are
+also **area-weighted**, blind to faint casts and tiny accents. This shows up three ways:
 
-Both classes are hue-consistent with everforest and both currently die at the neutral gate.
-They need **new signals**, not new thresholds.
+1. **Faint coherent casts** (misty forests): real green/teal tint at chroma 5–15; CIEDE inflated by
+   the saturation gap to the palette (chroma 21–44); also trips the neutral gate.
+2. **Tiny salient accents** (`48qo7o` — a green comet on black): the everforest-green coma/tail is
+   < 0.1 % of pixels (max chroma 35 at full 3420×2564 res). Area weighting and any sub-~1000 px scan
+   erase it (measured mean chroma 0.9).
+3. **Dark / off-tone regions in chromatic nature scenes** (gruvbox `d682mj` forest floor, `q6e3jd`
+   botanical print, `ex59dr` vivid green): the theme palette is **all light** (gruvbox chromatic
+   colors L 60–71; its only dark color is the near-neutral bg L16/C0), so dark-saturated image
+   regions match neither the light chromatic colors (L gap) nor the dark bg (C gap). Worst-of-top-3
+   CIEDE explodes (21–27) though the hue is a near-exact palette green.
 
-### Why the naive fixes fail (measured)
+### Two themes, two aesthetics — a labeling-philosophy fact
 
-- Relaxing the neutral gate alone is insufficient: the 5 FN also have `score_image_strict`
-  14–21 > threshold 12, so they'd still be rejected on score.
-- A pure hue-agreement rule (ignore chroma) admits `wallhaven-ex59dr.jpg` — a **vivid** green
-  the human rejected — so chroma cannot be fully ignored.
-- A salient-accent detector sensitive enough to catch the comet (0.058 % @ maxC 35) fires
-  first on `rainy_day_by_mleth-d94tvyv.png` (a `dont`): 0.64 % of pixels at chroma up to 100,
-  aligned to everforest's salmon accent. **Color statistics alone cannot separate them** — the
-  comet is spatially coherent (a compact blob); rainy's warm pixels are a *spread* city-light
-  band. Spatial concentration is the discriminator color distance misses.
+everforest is labeled **strictly** (rejects the vivid green `ex59dr`); gruvbox is labeled
+**permissively** ("earthy nature = gruvbox", accepts `ex59dr`). `ex59dr` is the *same image* — `do`
+for gruvbox, `dont` for everforest — with near-identical color distances to both palettes (ciede
+26.7 vs 26.4). **No palette-symmetric color metric can accept it for one theme and reject it for the
+other.** Therefore the permissive "hue-family" behavior must be a **per-theme opt-in**, not global.
+
+### Measured dead-ends (why the naive fixes fail)
+
+- Relaxing the neutral gate alone: the everforest FN still score 14–21 on strict > threshold 12.
+- Global threshold bump to ~21 (to admit gruvbox FN): gives everforest 3 FP.
+- Lightness-reweighted CIEDE (kL 1.5–3) or lightness-free CIEDE: gruvbox's do/dont **overlap** at
+  every setting, and everforest's donts collapse (`1ppx2w` → 6.7) → FP.
+- Salient-accent detector sensitive enough for the comet (0.058 % @ maxC 35) fires first on `rainy`
+  (0.64 % @ chroma≤100, salmon-aligned) → FP. The comet is a spatially **coherent** blob; rainy's
+  warm pixels are a **spread** city-light band — spatial concentration is the discriminator.
 
 ## Goal
 
-Recover the muted `do` images — including the comet — **without** any new false positive on the
-labeled `dont` set. Empirical target on the labeled fixtures: accuracy up, aiming 100 % at
-**zero** false positives. `theme_matches_image` remains the single source of the per-(image,
-theme) decision, called by `curate()`, the eval, and the gallery.
+Recover the muted `do` (incl. the comet) and the chromatic earthy-nature `do`, **without** any new
+false positive on either labeled `dont` set. Empirical target: **100 %, zero FP on both fixtures**
+(achieved by the prototype below). `theme_matches_image` stays the single per-(image, theme)
+decision, called by `curate()`, the eval, and the gallery.
 
-## Design: three decision paths
+## Design: four decision paths + a per-theme leniency flag
 
-`theme_matches_image` keeps its gate order. The **chromatic** branch is unchanged. The **muted**
-branch (image mean-chroma < neutral floor 12) gains two OR'd acceptance paths.
+`theme_matches_image` keeps its gate order. The **chromatic** branch gains a *lenient-only*
+hue-family path; the **muted** branch gains two always-on paths.
 
 ```
-polychrome? .................................... → reject           (UNCHANGED)
+polychrome? .............................................. → reject     (UNCHANGED)
 chromatic image (dom mean-chroma ≥ 12):
-    → score_image_strict worst-of-top-N ≤ threshold                (UNCHANGED — 0 FP today)
+    strict:      score_image_strict worst-of-top-N ≤ threshold          (UNCHANGED)
+    hue-family:  lenient AND on_hue_weight ≥ HUE_COV_MIN                 (NEW, per-theme)
+    else → reject
 muted image (dom mean-chroma < 12):
-    theme is neutral?  → match                                     (UNCHANGED gray↔gray)
-    theme is chromatic:
-        PATH A  cast:   cast_chroma ≥ CAST_C_MIN
-                    AND hue_dist(cast_hue, palette hues incl. tinted bg) ≤ CAST_TOL
-        PATH B  accent: dom mean-chroma < ACC_MONO_MAX
-                    AND accent blob exists (chromatic pixels present)
-                    AND accent_concentration ≥ CONC_MIN
-                    AND hue_dist(accent_hue, chromatic accent hues) ≤ ACC_TOL
-        neither → reject
+    theme is neutral?  → match                                          (UNCHANGED gray↔gray)
+    cast:    cast_chroma ≥ CAST_C_MIN AND hue_dist(cast_hue, tinted-palette-hues) ≤ CAST_TOL  (NEW)
+    accent:  dom mean-chroma < ACC_MONO_MAX AND accent blob present
+             AND accent_concentration ≥ CONC_MIN
+             AND hue_dist(accent_hue, chromatic-accent-hues) ≤ ACC_TOL  (NEW)
+    else → reject
 ```
 
-- **strict** (unchanged) catches every chromatic `dont`: vivid green ex59dr, browns, blue
-  skies, polychrome. Untouched → contributes no new FP.
-- **PATH A — cast.** Whole-image chroma-weighted mean `(a, b)` → `cast_chroma`, `cast_hue`.
-  Recovers the misty forests. `CAST_C_MIN` is what rejects washed / near-gray `dont`
-  (g7l393 castC 2.3, rainy 3.6, 2y3wr9 2.9). Cast targets are palette hues whose color has
-  chroma ≥ 3 — this **includes a tinted background** (everforest bg #2d353b, chroma 5, hue 250,
-  which is what recovers the blue-cast pair 7pr53v/rqjrzq) but **excludes a pure-gray bg**
-  whose hue would be noise.
-- **PATH B — accent.** Over chromatic pixels (chroma ≥ `ACCENT_CHROMA_FLOOR`), bucket into a
-  24×24 spatial grid; `accent_concentration` = share of accent pixels in the densest cell;
-  `accent_hue` = chroma-weighted mean hue of that densest cell. `CONC_MIN` rejects rainy's
-  *spread* city-light band (0.10) while admitting the comet blob (0.35). `ACC_MONO_MAX` keeps
-  the path to mostly-monochromatic grounds (rejects chromatic pastels like g7l393). Accent
-  targets are **chromatic** palette hues only (chroma ≥ 12) — not the bg — so black-compression
-  noise (vpyekp, hue ≈ 269) does not align.
+- **strict** (unchanged): worst nearest-palette CIEDE over the top-N dominants ≤ threshold.
+- **hue-family** (chromatic, `lenient` themes only): `on_hue_weight` = fraction of dominant weight
+  that is chromatic (chroma ≥ 12) **and** hue-aligned (≤ `HUE_TOL`) to a chromatic palette accent.
+  Recovers dark/off-tone nature scenes whose hue family is the theme's even when no single dominant
+  is close under CIEDE. Reads from **dominants only** — no pixel scan. Gated by the per-theme
+  `lenient` flag so it never fires for strict themes (keeps `ex59dr` out of everforest).
+- **cast** (muted, always on): whole-image chroma-weighted mean `(a,b)` → `cast_chroma`, `cast_hue`.
+  `CAST_C_MIN` rejects washed near-gray donts. Cast targets are palette hues with chroma ≥ 3 —
+  includes a *tinted* bg (everforest #2d353b, C5, H250, recovers the blue-cast pair) but excludes a
+  pure-gray bg whose hue is noise.
+- **accent** (muted, always on): over pixels with chroma ≥ `ACCENT_CHROMA_FLOOR`, bucket into an
+  `ACCENT_GRID`×`ACCENT_GRID` grid; `accent_concentration` = densest-cell share; `accent_hue` =
+  chroma-weighted mean hue of that cell. `CONC_MIN` rejects spread accents (rainy); `ACC_MONO_MAX`
+  keeps the path to mostly-mono grounds; accent targets are chromatic hues only (not bg).
 
-### Validation to date
+### Validation (prototype, graded on originals)
 
-A sandbox prototype of all three paths, graded on the 19 everforest fixtures at the images'
-originals, scores **19/19 = 100 %, FP = 0, FN = 0**. Path attribution: 7pr53v/rqjrzq/14653/
-fb002 via cast, 48qo7o via accent, all 14 `dont` rejected (strict or muted-reject).
+| theme | lenient | result | paths used by recovered `do` |
+|-------|---------|--------|------------------------------|
+| everforest | false | **19/19, FP 0, FN 0** | cast ×4, accent ×1 (comet) |
+| gruvbox | true | **13/13, FP 0, FN 0** | hue-family ×3, strict ×1 |
 
 ## Feature extraction — `image_features(path) → ImageFeatures`
 
-One numpy Lab pass at the image thumbnailed to longest-side `FEATURE_RES` (≈ 1000 px, needed so
-the comet survives). Returns, per image (theme-independent):
+`on_hue_weight` needs only `dominants` (cheap). Only **cast** and **accent** need a pixel scan: one
+numpy Lab pass at longest-side `FEATURE_RES` (≈ 1000 px, so the comet survives). Per image
+(theme-independent):
 
-| field | meaning |
-|-------|---------|
-| `dominants` | existing median-cut `[(rgb, weight)]` (drives polychrome / strict / neutral gate) |
-| `cast_chroma`, `cast_hue` | magnitude / angle of mean `(a, b)` over all pixels |
-| `accent_concentration` | densest-cell share of pixels with chroma ≥ `ACCENT_CHROMA_FLOOR` (0 if none) |
-| `accent_hue` | chroma-weighted mean hue of that densest cell |
+| field | source | meaning |
+|-------|--------|---------|
+| `dominants` | existing median-cut (256 px) | polychrome / strict / neutral gate / on-hue-weight |
+| `cast_chroma`, `cast_hue` | numpy pass | magnitude / angle of mean `(a,b)` over all pixels |
+| `accent_concentration` | numpy pass | densest-cell share of pixels with chroma ≥ `ACCENT_CHROMA_FLOOR` |
+| `accent_hue` | numpy pass | chroma-weighted mean hue of that densest cell |
 
-Computed **once per image**, reused across all themes (curate scores each image against every
-theme). The per-theme comparisons (`hue_dist` to palette / accent hues) stay inside
-`theme_matches_image`. `dom mean-chroma` (neutral gate + `ACC_MONO_MAX`) stays the existing
-dominant-weighted `image_mean_chroma` — **not** the pixel mean — for consistency with today's
-regime split (fb002's dominant mean 10.5 is muted; its pixel mean 12.0 would wrongly route it
-to the strict path).
+Computed **once per image**, reused across all themes. Per-theme comparisons (`hue_dist`,
+`on_hue_weight`, `score_image_strict`) stay inside `theme_matches_image`. The neutral gate and
+`ACC_MONO_MAX` use the existing dominant-weighted `image_mean_chroma` (not the pixel mean) — fb002's
+dominant mean 10.5 is muted; its pixel mean 12.0 would wrongly route it to the strict path.
 
-## Signature — optional `features`
+## Signature — optional `features`, per-theme `lenient`
 
 ```python
 theme_matches_image(dominants, theme_labs, *, threshold, top_colors, max_hues,
-                    features=None, <new muted-path params…>) -> bool
+                    features=None, lenient=False, <new path params…>) -> bool
 ```
 
-- Real callers (`curate`, eval, gallery) pass `features` → cast + accent paths active.
-- `features is None` → the muted branch falls back to **today's behavior** (neutral image +
-  chromatic theme → reject). The 6 synthetic `TestThemeMatches` unit tests, which build
-  hand-made `dominants` with no image file, pass nothing and **stay unchanged** — they exercise
-  the strict/neutral core, which is still the single decision source.
+- Real callers (`curate`, eval, gallery) pass `features` and the theme's `lenient` → all paths active.
+- `features is None` → muted branch falls back to **today's behavior** (neutral image + chromatic
+  theme → reject); `lenient` defaults false. The 6 synthetic `TestThemeMatches` unit tests pass
+  neither and **stay unchanged** — they exercise the strict/neutral core, still the single decision
+  source.
 
-Rationale: minimal ripple, existing tests remain meaningful, no awkward synthetic
-`ImageFeatures`. (Alternative — mandatory `features`, rewriting the 6 tests — rejected for
-churn with no correctness gain.)
+## Per-theme leniency
 
-## New parameters (provisional — everforest-tuned)
+`lenient` is **per theme**:
 
-| param | provisional default | role |
-|-------|--------------------|------|
-| `CAST_C_MIN` | 4.0 | min cast strength for PATH A |
-| `CAST_TOL` | 22° | max cast-hue distance to a palette hue |
-| `ACC_MONO_MAX` | 8.0 | PATH B only for mostly-mono images (dom mean-chroma) |
-| `CONC_MIN` | 0.25 | min densest-cell share for a "concentrated" accent |
+- **Eval**: carried in each label file's `params` block (`"lenient": true/false`), like `threshold`.
+  everforest `false`, gruvbox `true`.
+- **curate**: a repo-level override map (default `lenient=false`, strict) — e.g.
+  `THEME_OVERRIDES = {"gruvbox": {"lenient": True}}` in `match_wallpapers.py`, applied per theme in
+  the curate loop. A new theme is strict until a human opts it into hue-family matching.
+
+Leniency is **not auto-derived** — gruvbox and everforest have near-identical palette *shapes*
+(green/warm/dark-bg); the difference is aesthetic intent, which only a human sets. This is a known,
+accepted manual step, documented in the ownership table / CLAUDE.md.
+
+## Parameters (validated on both fixtures)
+
+| param | default | role |
+|-------|---------|------|
+| `CAST_C_MIN` | 4.0 | min cast strength (PATH cast) |
+| `CAST_TOL` | 22° | max cast-hue distance to a tinted palette hue (chroma ≥ 3) |
+| `ACC_MONO_MAX` | 8.0 | accent path only for mostly-mono images (dom mean-chroma) |
+| `CONC_MIN` | 0.25 | min densest-cell share for a concentrated accent |
 | `ACC_TOL` | 35° | max accent-hue distance to a chromatic accent hue |
 | `ACCENT_CHROMA_FLOOR` | 18 | chroma above which a pixel counts as accent |
 | `FEATURE_RES` | 1000 | longest-side px for the feature scan |
 | `ACCENT_GRID` | 24 | spatial grid resolution for concentration |
+| `HUE_COV_MIN` | 0.45 | min on-hue dominant weight (PATH hue-family, lenient only) |
+| `HUE_TOL` | 20° | hue tolerance for on-hue-weight |
+| `lenient` | false (per theme) | enables the chromatic hue-family path |
 
-Exposed as `curate()` kwargs + CLI flags, mirroring `threshold` / `max_hues`; added to the
-fixture `params` block; defaulted in code when a label file omits them (backward-compat with the
-existing everforest.json).
+Global defaults in code + CLI, mirrored in each fixture's `params`, defaulted when a label file
+omits them (backward-compat).
 
-## Overfitting risk & the 2-fixture requirement
+## Overfitting status
 
-**These 8 values are tuned on one fixture (everforest, 19 images) and some margins are thin**
-(14653 castC 4.4 vs floor 4.0). To de-risk generalization, a **second theme — gruvbox (warm,
-maximal contrast to everforest's cool green) — is labeled first**, and the design is
-re-validated and re-tuned against **both** fixtures before implementation is trusted.
-
-Possible outcome the 2nd fixture may force: absolute thresholds (`CAST_C_MIN`, `CAST_TOL`,
-`ACC_TOL`) may need to become **palette-relative** (e.g. scaled by the theme's own chroma /
-hue spread) rather than fixed. If so, the parameter table above becomes a set of *derived*
-values and the spec is updated accordingly. The three-path *architecture* is expected to hold;
-only the thresholding may change.
+Tuned and validated on **two** themes with opposite aesthetics (cool-strict everforest, warm-permissive
+gruvbox), so less overfit than a single fixture — but still two. Thin margins remain (cast: 14653
+castC 4.4 vs floor 4.0; hue-family: gruvbox d682mj 0.52 vs dont max 0.33). Each new theme labeled is
+another test; the design stays theme-agnostic apart from the manual per-theme `lenient` choice.
 
 ## Dependencies & cost
 
-- **numpy** (already installed, 2.4.6) for the vectorized Lab pass — pure-Python at 1000 px is
-  ~3–5 s/image vs ~0.05 s with numpy. Document numpy as a dependency (no requirements file
-  exists today; Pillow is the current implicit dep).
-- The feature scan at ~1000 px is heavier than today's 256 px dominant thumbnail, but runs
-  **once per image**; the curate tool runs occasionally, so this is acceptable.
+- **numpy** (installed 2.4.6) for the vectorized Lab pass; pure-Python at 1000 px is ~3–5 s/image vs
+  ~0.05 s. Document as a dependency (no requirements file today; Pillow is the current implicit dep).
+- Feature scan at ~1000 px runs **once per image**; curate runs occasionally → acceptable.
 
 ## Acceptance criteria (empirical, via eval)
 
-- `python -m unittest tests.test_labeled_fixtures -v` on **both** `everforest.json` and
-  `gruvbox.json`: accuracy up, target 100 % (or justified-close) at **zero** false positives.
-- `python -m unittest discover -s tests` green. The 43 existing `test_match_wallpapers.py`
-  tests stay green; any updated principally (not force-fit). `theme_matches_image` remains the
-  single decision source (curate + eval + gallery call it).
-- `curate()` and the gallery pass `features` and reflect the new paths.
+- `python -m unittest tests.test_labeled_fixtures -v` on `everforest.json` + `gruvbox.json`:
+  **100 %** (or justified-close) at **zero** false positives, each theme.
+- `python -m unittest discover -s tests` green; the 43 `test_match_wallpapers.py` tests stay green
+  (updated principally, not force-fit). `theme_matches_image` remains the single decision source.
+- `curate()` and the gallery pass `features` + per-theme `lenient` and reflect the new paths.
 - No real wallpapers committed; eval references originals by `source_dir/basename`.
 
 ## Out of scope
 
-- Spatial object / semantic detection beyond the single-blob concentration measure.
-- Retuning the chromatic (strict) path — it is FP-free and untouched.
-- Labeling themes beyond everforest + gruvbox (future work; the design stays theme-agnostic).
+- Auto-deriving `lenient` from the palette (manual per-theme for now).
+- Spatial object / semantic detection beyond single-blob concentration.
+- Retuning the chromatic **strict** metric (unchanged; FP-free).
+- Labeling themes beyond everforest + gruvbox (future; design stays theme-agnostic).
