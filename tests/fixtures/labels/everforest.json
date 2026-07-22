@@ -1,0 +1,123 @@
+{
+  "theme": "everforest",
+  "source_dir": "~/Wallpapers",
+  "palette": [
+    "#2d353b",
+    "#7fbbb3",
+    "#e67e80",
+    "#a7c080",
+    "#dbbc7f",
+    "#7fbbb3",
+    "#d699b6",
+    "#83c092",
+    "#e67e80",
+    "#a7c080",
+    "#dbbc7f",
+    "#7fbbb3",
+    "#d699b6",
+    "#83c092"
+  ],
+  "params": {
+    "threshold": 12,
+    "top_colors": 3,
+    "k": 8,
+    "max_hues": 4
+  },
+  "items": [
+    {
+      "name": "wallhaven-7pr53v.jpg",
+      "label": "do",
+      "reason": null
+    },
+    {
+      "name": "wallhaven-48qo7o.jpg",
+      "label": "do",
+      "reason": null
+    },
+    {
+      "name": "wallhaven-269096.jpg",
+      "label": "dont",
+      "reason": "polychrome"
+    },
+    {
+      "name": "wallhaven-rqjrzq.jpg",
+      "label": "do",
+      "reason": null
+    },
+    {
+      "name": "wallhaven-g7l393.jpg",
+      "label": "dont",
+      "reason": "wrong-hue"
+    },
+    {
+      "name": "54ede2f71f395d57718b4578.jpg",
+      "label": "dont",
+      "reason": "polychrome"
+    },
+    {
+      "name": "14653697084231.jpg",
+      "label": "do",
+      "reason": null
+    },
+    {
+      "name": "wallhaven-q22x27.png",
+      "label": "dont",
+      "reason": "polychrome"
+    },
+    {
+      "name": "wallhaven-e75mko.jpg",
+      "label": "dont",
+      "reason": "wrong-hue"
+    },
+    {
+      "name": "wallhaven-2y3wr9.jpg",
+      "label": "dont",
+      "reason": "neutral"
+    },
+    {
+      "name": "wallhaven-2eqjpm.png",
+      "label": "dont",
+      "reason": "wrong-hue"
+    },
+    {
+      "name": "wallhaven-vpyekp.jpg",
+      "label": "dont",
+      "reason": "neutral"
+    },
+    {
+      "name": "wallhaven-1ppx2w.png",
+      "label": "dont",
+      "reason": "wrong-hue"
+    },
+    {
+      "name": "fb00275811ec6315bd401774bd4eaebc.jpg",
+      "label": "do",
+      "reason": null
+    },
+    {
+      "name": "16ff4c9e72da280e6560920df8f12a5e.jpg",
+      "label": "dont",
+      "reason": "wrong-hue"
+    },
+    {
+      "name": "wallhaven-ex59dr.jpg",
+      "label": "dont",
+      "reason": "wrong-hue"
+    },
+    {
+      "name": "wallhaven-r2e391.png",
+      "label": "dont",
+      "reason": "polychrome"
+    },
+    {
+      "name": "wallhaven-0w797n.jpg",
+      "label": "dont",
+      "reason": "polychrome"
+    },
+    {
+      "name": "rainy_day_by_mleth-d94tvyv.png",
+      "label": "dont",
+      "reason": "neutral"
+    }
+  ]
+}

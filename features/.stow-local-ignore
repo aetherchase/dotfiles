@@ -2,3 +2,6 @@
 # Repo/docs/system files live ABOVE features/, so stow never sees them and
 # they need no entries here.
 \.stow-local-ignore
+# Package-presence keeper only (keeps `wallpapers` non-empty in git so it stays
+# selectable); never symlink it into ~/.config.
+\.gitkeep

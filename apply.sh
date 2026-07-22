@@ -43,7 +43,19 @@ for d in "$FEATURES_DIR"/*/; do
     [ -n "${seen[$pkg]:-}" ] && continue
     echo "Unstowing deselected feature: $pkg"
     stow -D --no-folding --dir="$FEATURES_DIR" --target="$HOME" "$pkg" 2>/dev/null || true
+    # wallpapers ships its symlinks straight into ~/.config (not via stow), so
+    # stow -D can't remove them — do it explicitly.
+    [ "$pkg" = wallpapers ] && python3 "$DOTFILES_DIR/match_wallpapers.py" --unlink || true
 done
+
+# --- Regenerate machine-specific wallpaper symlinks (gitignored) ---------------
+# The `wallpapers` package ships NO symlinks in git — they point to a personal,
+# per-host collection. Recreate the live ~/.config dir-symlinks from whatever the
+# matcher already curated into features/wallpapers/.config/omarchy/backgrounds/.
+# Curation itself (color matching) is a manual step: ./match_wallpapers.py
+if [ -n "${seen[wallpapers]:-}" ]; then
+    python3 "$DOTFILES_DIR/match_wallpapers.py" --relink || true
+fi
 
 # --- Install the selected packages ---------------------------------------------
 # --no-folding: create real directories and symlink individual files, instead of

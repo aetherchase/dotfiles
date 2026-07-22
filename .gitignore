@@ -12,6 +12,11 @@ features/yazi/.config/yazi/plugins/
 features/yazi/.config/yazi/*.db
 features/yazi/.config/yazi/*.db-*
 
+# wallpaper symlinks: machine-specific, point to a personal collection —
+# regenerate with ./link-omarchy-wallpapers.sh (apply.sh runs it for `wallpapers`)
+features/wallpapers/.config/omarchy/backgrounds/*
+!features/wallpapers/.config/omarchy/backgrounds/.gitkeep
+
 # editor/OS junk
 *.swp
 *~
